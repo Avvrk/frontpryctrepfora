@@ -460,7 +460,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, computed } from 'vue';
+import { ref, onBeforeMount, computed, nextTick } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -625,8 +625,18 @@ function generateCalendar() {
         right: '',
       },
       events,
+      datesSet: function () {
+        addTimeSlotDivisions();
+      },
+      // También agregar en eventDidMount por si acaso
+      eventDidMount: function () {
+        // Pequeño delay para que se rendericen los eventos
+        setTimeout(addTimeSlotDivisions, 50);
+      },
     });
   });
+  // Agregar divisiones iniciales y configurar clicks
+  addTimeSlotDivisions();
 
   existInfo.value = true;
 }
@@ -878,6 +888,23 @@ function changeColor(hText) {
     };
   }
 }
+
+function addTimeSlotDivisions() {
+  nextTick(() => {
+    document.querySelectorAll('.fc-daygrid-day-frame').forEach((el) => {
+      if (!el.querySelector('.franja')) {
+        el.insertAdjacentHTML(
+          'beforeend',
+          `
+            <div class="franja" style="position: absolute; top: 0; left: 0; width: 100%; height: 33.33%; border: 1px solid #FFE87C;"></div>
+            <div class="franja" style="position: absolute; top: 33.33%; left: 0; width: 100%; height: 33.33%; border: 1px solid #FF8C42;"></div>
+            <div class="franja" style="position: absolute; top: 66.66%; left: 0; width: 100%; height: 33.33%; border: 1px solid #1C1C3A;"></div>
+                `
+        );
+      }
+    });
+  });
+}
 </script>
 
 <style scoped>
@@ -915,14 +942,42 @@ function changeColor(hText) {
 }
 
 .legend-item.morning .legend-color {
-  background-color: #FFE87C;
+  background-color: #ffe87c;
 }
 
 .legend-item.afternoon .legend-color {
-  background-color: #FF8C42;
+  background-color: #ff8c42;
 }
 
 .legend-item.night .legend-color {
-  background-color: #1C1C3A;
+  background-color: #1c1c3a;
+}
+
+.fc-daygrid-day-frame {
+  position: relative; /* Cambio de absolute a relative */
+}
+
+.franja {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 33.33%;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+#franjam {
+  top: 0;
+  background-color: rgba(255, 255, 0, 0.1);
+}
+
+#franjat {
+  top: 33.33%;
+  background: rgba(0, 255, 0, 0.1);
+}
+
+#franjan {
+  top: 66.66%;
+  background: rgba(0, 0, 255, 0.1);
 }
 </style>
