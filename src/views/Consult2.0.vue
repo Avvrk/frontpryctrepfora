@@ -1045,25 +1045,6 @@ function getShiftClass(observation) {
 </script>
 
 <style>
-.fc-daygrid-body tr {
-  height: 111.04px; /* ajusta según tu diseño */
-}
-
-.fc-event.morning-shift {
-  transform: translateY(-22px);
-  z-index: 1;
-}
-
-.fc-event.afternoon-shift {
-  transform: translateY(0px);
-  z-index: 1;
-}
-
-.fc-event.night-shift {
-  transform: translateY(5px);
-  z-index: 1;
-}
-
 #calender {
   width: 1000px !important;
   height: 665px !important;
@@ -1135,5 +1116,24 @@ function getShiftClass(observation) {
 #franjan {
   top: 66.66%;
   background: rgba(0, 0, 255, 0.1);
+}
+
+.fc-daygrid-body tr {
+  height: 111.04px; /* ajusta según tu diseño */
+}
+
+.fc-event.morning-shift {
+  transform: translateY(-22px);
+  z-index: 1;
+}
+
+.fc-event.afternoon-shift {
+  transform: translateY(0px);
+  z-index: 1;
+}
+
+.fc-event.night-shift {
+  transform: translateY(5px);
+  z-index: 1;
 }
 </style>
