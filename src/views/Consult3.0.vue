@@ -600,7 +600,6 @@ function generateCalendar() {
       element.backgroundColor = color.backgroundColor;
       element.borderColor = color.borderColor;
       element.textColor = color.textColor;
-      element.className = getShiftClass(element.observation)
 
       console.log(element);
     });
@@ -626,40 +625,11 @@ function generateCalendar() {
         right: '',
       },
       events,
-      datesSet: function () {
-        addTimeSlotDivisions();
-        agregarMisDivsPersonalizados();
-      },
-/*       // También agregar en eventDidMount por si acaso
-      eventDidMount: function () {
-        // Pequeño delay para que se rendericen los eventos
-        setTimeout(addTimeSlotDivisions, 50);
-
-        
-      }, */
     });
   });
-  // Agregar divisiones iniciales y configurar clicks
-  /* addTimeSlotDivisions(); */
 
   existInfo.value = true;
 }
-
-function agregarMisDivsPersonalizados() {
-  const celdas = document.querySelectorAll('.fc-daygrid-day');
-
-  celdas.forEach((celda) => {
-    const franjaMorning = celda.querySelector('.franja-morning');
-
-    if (franjaMorning && !franjaMorning.querySelector('.avvv')) {
-      const disponible = document.createElement('div');
-      disponible.className = 'avvv';
-      disponible.textContent = 'SI ENTRO';
-      franjaMorning.appendChild(disponible);
-    }
-  });
-}
-
 
 async function getFiches() {
   const res = await useFiches.getFilesActive();
@@ -891,176 +861,6 @@ function changeColor(shift) {
     };
   }
 }
-
-function addTimeSlotDivisions() {
-  nextTick(() => {
-    document.querySelectorAll('.fc-daygrid-day-frame').forEach((dayEl) => {
-      if (!dayEl.querySelector('.franja')) {
-        // Obtener la fecha del día actual
-        const dayElement = dayEl.closest('.fc-daygrid-day');
-        const dateStr = dayElement?.getAttribute('data-date');
-
-        if (!dateStr) return;
-
-        // Buscar eventos para esta fecha específica
-        const eventsForDay = getEventsForDate(dateStr);
-
-        // Verificar qué franjas horarias tienen eventos
-        const hasEventInMorning = hasEventsInTimeSlot(eventsForDay, 'morning');
-        const hasEventInAfternoon = hasEventsInTimeSlot(
-          eventsForDay,
-          'afternoon'
-        );
-        const hasEventInNight = hasEventsInTimeSlot(eventsForDay, 'night');
-
-        // Generar estilos dinámicos para cada franja
-        const morningStyle = getMorningStyle(hasEventInMorning);
-        const afternoonStyle = getAfternoonStyle(hasEventInAfternoon);
-        const nightStyle = getNightStyle(hasEventInNight);
-
-        const morningText = hasEventInMorning ? '' : 'Disponible';
-        const afternoonText = hasEventInAfternoon ? '' : 'Disponible';
-        const nightText = hasEventInNight ? '' : 'Disponible';
-
-        // Insertar las divisiones con estilos condicionales
-        dayEl.insertAdjacentHTML(
-          'beforeend',
-          `
-            <div class="franja franja-morning" style="${morningStyle}">${morningText}</div>
-            <div class="franja franja-afternoon" style="${afternoonStyle}">${afternoonText}</div>
-            <div class="franja franja-night" style="${nightStyle}">${nightText}</div>
-          `
-        );
-      }
-    });
-  });
-}
-
-function getEventsForDate(dateStr) {
-  const targetDate = new Date(dateStr);
-  const allEvents = [];
-
-  // Recorrer todos los meses en eventsCalender
-  if (eventsCalender.value) {
-    Object.values(eventsCalender.value).forEach((monthEvents) => {
-      if (Array.isArray(monthEvents)) {
-        monthEvents.forEach((event) => {
-          const eventDate = new Date(event.start || event.date);
-          // Comparar solo año, mes y día
-          if (
-            eventDate.getFullYear() === targetDate.getFullYear() &&
-            eventDate.getMonth() === targetDate.getMonth() &&
-            eventDate.getDate() === targetDate.getDate()
-          ) {
-            allEvents.push(event);
-          }
-        });
-      }
-    });
-  }
-
-  return allEvents;
-}
-
-// Función para verificar si hay eventos en una franja horaria específica
-function hasEventsInTimeSlot(events, timeSlot) {
-  return events.some((event) => {
-    const eventTimeSlot = getEventTimeSlot(
-      event.tstart || event.extendedProps?.tstart
-    );
-    return eventTimeSlot === timeSlot;
-  });
-}
-
-// Función para determinar la franja horaria de un evento
-function getEventTimeSlot(timeText) {
-  if (!timeText) return null;
-
-  const regex = /(\d{1,2}):(\d{2})\s*(A\.M\.|P\.M\.)/i;
-  const match = timeText.match(regex);
-
-  if (!match) return null;
-
-  let hour = parseInt(match[1]);
-  const period = match[3].toUpperCase();
-
-  // Convertir a formato 24 horas
-  if (period === 'P.M.' && hour !== 12) {
-    hour += 12;
-  } else if (period === 'A.M.' && hour === 12) {
-    hour = 0;
-  }
-
-  // Determinar franja horaria
-  if (hour >= 6 && hour < 12) {
-    return 'morning';
-  } else if (hour >= 12 && hour < 18) {
-    return 'afternoon';
-  } else {
-    return 'night';
-  }
-}
-
-// Funciones para generar estilos de cada franja
-function getMorningStyle(hasEvent) {
-  const baseStyle =
-    'position: absolute; top: 0; left: 0; width: 100%; height: 33.33%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #b9b9b9;';
-
-  if (hasEvent) {
-    return `${baseStyle}
-      background-color: #FFE87C4D;
-      border: 2px solid #FFE87C;
-      box-shadow: inset 0 0 10px #FFE87C80;`;
-  } else {
-    return `${baseStyle}
-      background-color: #FFE87C1A;
-      border: 1px dashed #b2b2b2;`;
-  }
-}
-
-function getAfternoonStyle(hasEvent) {
-  const baseStyle =
-    'position: absolute; top: 33.33%; left: 0; width: 100%; height: 33.33%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #b9b9b9;';
-
-  if (hasEvent) {
-    return `${baseStyle}
-      background-color: rgba(255, 140, 66, 0.3);
-      border: 2px solid #FF8C42;
-      box-shadow: inset 0 0 10px rgba(255, 140, 66, 0.5);`;
-  } else {
-    return `${baseStyle}
-      background-color: #FFE87C1A;
-      border: 1px dashed #b2b2b2;`;
-  }
-}
-
-function getNightStyle(hasEvent) {
-  const baseStyle =
-    'position: absolute; top: 66.66%; left: 0; width: 100%; height: 33.33%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #b9b9b9;';
-
-  if (hasEvent) {
-    return `${baseStyle}
-      background-color: rgba(28, 28, 58, 0.3);
-      border: 2px solid #1C1C3A;
-      box-shadow: inset 0 0 10px rgba(28, 28, 58, 0.5);`;
-  } else {
-    return `${baseStyle}
-      background-color: #FFE87C1A;
-      border: 1px dashed #b2b2b2;`;
-  }
-}
-
-function getShiftClass(observation) {
-  if (!observation) return 'unknown-shift';
-
-  const lowerObs = observation.toLowerCase();
-
-  if (lowerObs.includes('mañana')) return 'morning-shift';
-  if (lowerObs.includes('tarde')) return 'afternoon-shift';
-  if (lowerObs.includes('noche')) return 'night-shift';
-
-  return 'unknown-shift'; // fallback si no reconoce
-}
 </script>
 
 <style>
@@ -1068,12 +868,6 @@ function getShiftClass(observation) {
   width: 1000px !important;
   height: 665px !important;
 }
-
-/* .item {
-  align-self: center;
-  border: 1px solid #00a91c;
-  width: 800px;
-} */
 
 /* Leyenda de horarios */
 .time-legend {
@@ -1108,51 +902,4 @@ function getShiftClass(observation) {
 .legend-item.night .legend-color {
   background-color: #1c1c3a;
 }
-
-.fc-daygrid-day-frame {
-  position: relative; /* Cambio de absolute a relative */
-}
-
-.franja {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 33.33%;
-  border-top: 1px dashed rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-}
-
-#franjam {
-  top: 0;
-  background-color: rgba(255, 255, 0, 0.1);
-}
-
-#franjat {
-  top: 33.33%;
-  background: rgba(0, 255, 0, 0.1);
-}
-
-#franjan {
-  top: 66.66%;
-  background: rgba(0, 0, 255, 0.1);
-}
-
-/* .fc-daygrid-body tr {
-  height: 111.04px;  ajusta según tu diseño 
-} */
-
-/* .fc-event.morning-shift {
-  transform: translateY(-22px);
-  z-index: 1;
-}
-
-.fc-event.afternoon-shift {
-  transform: translateY(0px);
-  z-index: 1;
-}
-
-.fc-event.night-shift {
-  transform: translateY(5px);
-  z-index: 1;
-} */
 </style>

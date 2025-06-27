@@ -31,6 +31,7 @@ import NewByInstructor from "../views/NewByInstructor.vue";
 import ImprovementByInstructor from "../views/ImprovementByInstructor.vue";
 import ReportHoursInstruc from "../views/ReporteHoursIntructor.vue";
 import Test from "../views/Consult2.0.vue";
+import Test2 from "../views/Consult3.0.vue";
 import { useRouter } from "vue-router";
 import { storeUser } from "../store/users.js";
 
@@ -217,7 +218,7 @@ export const routes = [
   {
     path: "/tipoConsultaTEST/:opcion",
     name: "tipoConsultaTEST",
-    component: Test,
+    component: Test2,
     meta: {
       rol: ["USER", "PROGRAMADOR", "COORDINADOR"]
     },
