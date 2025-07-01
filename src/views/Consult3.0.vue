@@ -381,9 +381,9 @@
                   class="justify-center items-center customEvents"
                 >
                   <span>
-                    <b>{{ arg.timeText }}</b>
-                    <i>{{ arg.event.title }}</i></span
-                  >
+                    <i>{{ arg.event.title }}</i>
+                    <!-- Aquí eliminamos el arg.timeText -->
+                  </span>
 
                   <template #popper>
                     <div class="content-tooltip-event">
@@ -593,7 +593,9 @@ function generateCalendar() {
     let events = null;
     let color = null;
 
-    events = eventsCalender.value[my.split('-')[1]];
+    events = generateDailyEvents(fStart.value, fEnd.value);
+
+    /* events = eventsCalender.value[my.split('-')[1]];
 
     events.forEach((element) => {
       color = changeColor(element.observation);
@@ -602,7 +604,7 @@ function generateCalendar() {
       element.textColor = color.textColor;
 
       console.log(element);
-    });
+    }); */
 
     const formatDate = (
       my.split('-')[0] +
@@ -840,7 +842,7 @@ function handleThematicareaChange(selectedArea) {
   filterInstructor.value = [...copyFilterInst.value];
 }
 
-function changeColor(shift) {
+/* function changeColor(shift) {
   if (shift.toLocaleLowerCase() == 'jornada mañana') {
     return {
       backgroundColor: '#FFE87C',
@@ -860,6 +862,54 @@ function changeColor(shift) {
       textColor: '#FFFFFF',
     };
   }
+} */
+
+function generateDailyEvents(startDate, endDate) {
+  const events = [];
+  const start = new Date(startDate.replace(/\//g, '-'));
+  const end = new Date(endDate.replace(/\//g, '-'));
+
+  for (
+    let date = new Date(start);
+    date <= end;
+    date.setDate(date.getDate() + 1)
+  ) {
+    const baseDate = new Date(date);
+    const day = baseDate.getDate();
+    baseDate.setDate(day + 1);
+
+    events.push(
+      {
+        start: new Date(baseDate.setHours(6, 30, 0, 0)),
+        end: new Date(baseDate.setHours(12, 30, 0, 0)),
+        title: '\u200B',
+        allDay: true,
+        backgroundColor: '#ffffff',
+        borderColor: '#929292',
+        textColor: '#000000',
+      },
+      {
+        start: new Date(baseDate.setHours(12, 30, 0, 0)),
+        end: new Date(baseDate.setHours(18, 30, 0, 0)),
+        title: '\u200B',
+        allDay: true,
+        backgroundColor: '#ececec',
+        borderColor: '#929292',
+        textColor: '#000000',
+      },
+      {
+        start: new Date(baseDate.setHours(18, 30, 0, 0)),
+        end: new Date(baseDate.setHours(23, 30, 0, 0)),
+        title: '\u200B',
+        allDay: true,
+        backgroundColor: '#e0e0e0',
+        borderColor: '#929292',
+        textColor: '#FFFFFF',
+      }
+    );
+  }
+
+  return events;
 }
 </script>
 
