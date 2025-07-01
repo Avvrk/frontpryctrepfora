@@ -886,7 +886,6 @@ function generateDailyEvents(startDate, endDate) {
         allDay: true,
         backgroundColor: '#ffffff',
         borderColor: '#929292',
-        textColor: '#000000',
       },
       {
         start: new Date(baseDate.setHours(12, 30, 0, 0)),
@@ -895,7 +894,6 @@ function generateDailyEvents(startDate, endDate) {
         allDay: true,
         backgroundColor: '#ececec',
         borderColor: '#929292',
-        textColor: '#000000',
       },
       {
         start: new Date(baseDate.setHours(18, 30, 0, 0)),
@@ -904,7 +902,6 @@ function generateDailyEvents(startDate, endDate) {
         allDay: true,
         backgroundColor: '#e0e0e0',
         borderColor: '#929292',
-        textColor: '#FFFFFF',
       }
     );
   }
