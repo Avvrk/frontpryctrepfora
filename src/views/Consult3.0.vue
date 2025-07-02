@@ -595,6 +595,29 @@ function generateCalendar() {
 
     events = generateDailyEvents(fStart.value, fEnd.value);
 
+    console.log(events, eventsCalender.value[my.split('-')[1]]);
+
+    events.forEach((a, i) => {
+      eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
+        // console.log(a.start.toLocaleDateString('sv-SE'), b.start);
+        if (a.start.toLocaleDateString('sv-SE') === b.start) {
+          const horaA = a.start
+            .toLocaleTimeString('en-US', {
+              hour12: true,
+              hour: 'numeric',
+              minute: '2-digit',
+            })
+            .replace('AM', 'A.M.')
+            .replace('PM', 'P.M.');
+
+          console.log('Hora A:', horaA, 'Hora B:', b.tstart);
+          if (horaA === b.tstart) {
+            events[i] = b;
+          }
+        }
+      });
+    });
+
     /* events = eventsCalender.value[my.split('-')[1]];
 
     events.forEach((element) => {
@@ -883,6 +906,7 @@ function generateDailyEvents(startDate, endDate) {
         start: new Date(baseDate.setHours(6, 30, 0, 0)),
         end: new Date(baseDate.setHours(12, 30, 0, 0)),
         title: '\u200B',
+        observation: 'JORNADA MAÑANA',
         allDay: true,
         backgroundColor: '#ffffff',
         borderColor: '#929292',
@@ -891,6 +915,7 @@ function generateDailyEvents(startDate, endDate) {
         start: new Date(baseDate.setHours(12, 30, 0, 0)),
         end: new Date(baseDate.setHours(18, 30, 0, 0)),
         title: '\u200B',
+        observation: 'JORNADA TARDE',
         allDay: true,
         backgroundColor: '#ececec',
         borderColor: '#929292',
@@ -899,6 +924,7 @@ function generateDailyEvents(startDate, endDate) {
         start: new Date(baseDate.setHours(18, 30, 0, 0)),
         end: new Date(baseDate.setHours(23, 30, 0, 0)),
         title: '\u200B',
+        observation: 'JORNADA NOCHE',
         allDay: true,
         backgroundColor: '#e0e0e0',
         borderColor: '#929292',
