@@ -381,9 +381,9 @@
                   class="justify-center items-center customEvents"
                 >
                   <span>
-                    <i>{{ arg.event.title }}</i>
-                    <!-- Aquí eliminamos el arg.timeText -->
-                  </span>
+                    <b>{{ arg.timeText }}</b>
+                    <i>{{ arg.event.title }}</i></span
+                  >
 
                   <template #popper>
                     <div class="content-tooltip-event">
