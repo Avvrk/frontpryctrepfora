@@ -613,21 +613,25 @@ function generateCalendar() {
           console.log('Hora A:', horaA, 'Hora B:', b.tstart);
           if (horaA === b.tstart) {
             events[i] = b;
+            events[i] = { ...b, order: a.order };
           }
         }
       });
+      events.sort((a, b) => a.order - b.order);
     });
 
-    /* events = eventsCalender.value[my.split('-')[1]];
+    events = eventsCalender.value[my.split('-')[1]];
 
     events.forEach((element) => {
-      color = changeColor(element.observation);
-      element.backgroundColor = color.backgroundColor;
-      element.borderColor = color.borderColor;
-      element.textColor = color.textColor;
+      if (element.code) {
+        color = changeColor(element.observation);
+        element.backgroundColor = color.backgroundColor;
+        element.borderColor = color.borderColor;
+        element.textColor = color.textColor;
+      }
 
       console.log(element);
-    }); */
+    });
 
     const formatDate = (
       my.split('-')[0] +
@@ -649,6 +653,7 @@ function generateCalendar() {
         center: 'title',
         right: '',
       },
+      eventOrder: 'order',
       events,
     });
   });
@@ -865,7 +870,7 @@ function handleThematicareaChange(selectedArea) {
   filterInstructor.value = [...copyFilterInst.value];
 }
 
-/* function changeColor(shift) {
+function changeColor(shift) {
   if (shift.toLocaleLowerCase() == 'jornada mañana') {
     return {
       backgroundColor: '#FFE87C',
@@ -885,7 +890,7 @@ function handleThematicareaChange(selectedArea) {
       textColor: '#FFFFFF',
     };
   }
-} */
+}
 
 function generateDailyEvents(startDate, endDate) {
   const events = [];
@@ -910,6 +915,7 @@ function generateDailyEvents(startDate, endDate) {
         allDay: true,
         backgroundColor: '#ffffff',
         borderColor: '#929292',
+        order: 1,
       },
       {
         start: new Date(baseDate.setHours(12, 30, 0, 0)),
@@ -919,15 +925,17 @@ function generateDailyEvents(startDate, endDate) {
         allDay: true,
         backgroundColor: '#ececec',
         borderColor: '#929292',
+        order: 2,
       },
       {
         start: new Date(baseDate.setHours(18, 30, 0, 0)),
         end: new Date(baseDate.setHours(23, 30, 0, 0)),
-        title: '\u200B',
+        title: '\uFEFF',
         observation: 'JORNADA NOCHE',
         allDay: true,
         backgroundColor: '#e0e0e0',
         borderColor: '#929292',
+        order: 3,
       }
     );
   }
