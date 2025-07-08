@@ -595,7 +595,7 @@ function generateCalendar() {
 
     events = generateDailyEvents(fStart.value, fEnd.value);
 
-    console.log(events, eventsCalender.value[my.split('-')[1]]);
+    // console.log(events, eventsCalender.value[my.split('-')[1]]);
 
     events.forEach((a, i) => {
       eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
@@ -620,7 +620,7 @@ function generateCalendar() {
       events.sort((a, b) => a.order - b.order);
     });
 
-    events = eventsCalender.value[my.split('-')[1]];
+    // events = eventsCalender.value[my.split('-')[1]];
 
     events.forEach((element) => {
       if (element.code) {
@@ -923,7 +923,7 @@ function generateDailyEvents(startDate, endDate) {
         title: '\u200B',
         observation: 'JORNADA TARDE',
         allDay: true,
-        backgroundColor: '#ececec',
+        backgroundColor: '#ffffff',
         borderColor: '#929292',
         order: 2,
       },
@@ -933,7 +933,7 @@ function generateDailyEvents(startDate, endDate) {
         title: '\uFEFF',
         observation: 'JORNADA NOCHE',
         allDay: true,
-        backgroundColor: '#e0e0e0',
+        backgroundColor: '#ffffff',
         borderColor: '#929292',
         order: 3,
       }
