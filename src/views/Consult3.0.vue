@@ -294,25 +294,25 @@
             <spam class="text-weight-bold"> AMBIENTE: </spam
             >{{ nameEnvironment.toUpperCase() }}
           </spam>
+          <div class="time-legend q-mb-md q-pt-xl" v-if="opcion == 'instructor' && existInfo">
+              <div class="legend-item morning">
+                <span class="legend-color"></span>
+                <span>Mañana (6:30 AM - 12:30 PM)</span>
+              </div>
+              <div class="legend-item afternoon">
+                <span class="legend-color"></span>
+                <span>Tarde (12:30 PM - 6:30 PM)</span>
+              </div>
+              <div class="legend-item night">
+                <span class="legend-color"></span>
+                <span>Noche (6:30 PM - 11:30 PM)</span>
+              </div>
+            </div>
         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-10 q-pb-lg q-mt-md justify-center flex">
-            <div class="time-legend q-mb-md">
-              <div class="legend-item morning">
-                <span class="legend-color"></span>
-                <span>Mañana (6:00 AM - 12:00 PM)</span>
-              </div>
-              <div class="legend-item afternoon">
-                <span class="legend-color"></span>
-                <span>Tarde (12:00 PM - 6:00 PM)</span>
-              </div>
-              <div class="legend-item night">
-                <span class="legend-color"></span>
-                <span>Noche (6:00 PM - 6:00 AM)</span>
-              </div>
-            </div>
             <FullCalendar id="calender" class="text-uppercase" :options="c">
               <template v-if="opcion == 'instructor'" v-slot:eventContent="arg">
                 <VMenu
@@ -483,6 +483,7 @@ import { excelToReports } from '../services/excelToReports.js';
 
 import BtnBack from '../layouts/btnBackLayout.vue';
 import HeaderLayout from '../layouts/headerViewsLayout.vue';
+import { symOutlinedAirlineSeatFlatAngled } from '@quasar/extras/material-symbols-outlined';
 
 const $q = useQuasar();
 
@@ -495,6 +496,8 @@ const role = ref(useUser.getRole());
 
 let fiche = ref();
 let inst = ref();
+let thematicarea = ref();
+let knowledge = ref();
 let environment = ref();
 let fStart = ref();
 let fEnd = ref();
@@ -520,7 +523,6 @@ let filterInstructor = ref([]);
 let filterEnvironment = ref([]);
 let loadingData = ref(false);
 let print = ref(false);
-let knowledge = ref();
 let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
@@ -551,6 +553,8 @@ function cancel() {
   existInfo.value = false;
   fiche.value = '';
   inst.value = '';
+  thematicarea.value = '';
+  knowledge.value = '';
   environment.value = '';
   fStart.value = '';
   fEnd.value = '';
@@ -593,13 +597,24 @@ function generateCalendar() {
     let events = null;
     let color = null;
 
-    events = generateDailyEvents(fStart.value, fEnd.value);
+    const [year, month] = my.split('-');
+    const monthStart = new Date(`${year}-${month}-01`);
+    const monthEnd = new Date(year, month, 0);
+    const globalStart = new Date(fStart.value.replace(/\//g, '-'));
+    const globalEnd = new Date(fEnd.value.replace(/\//g, '-'));
 
-    // console.log(events, eventsCalender.value[my.split('-')[1]]);
+    const startRange = monthStart > globalStart ? monthStart : globalStart;
+    const endRange = monthEnd < globalEnd ? monthEnd : globalEnd;
+
+    console.log(startRange, endRange)
+
+    events = generateDailyEvents(
+      startRange.toISOString().split('T')[0],
+      endRange.toISOString().split('T')[0]
+    );
 
     events.forEach((a, i) => {
       eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
-        // console.log(a.start.toLocaleDateString('sv-SE'), b.start);
         if (a.start.toLocaleDateString('sv-SE') === b.start) {
           const horaA = a.start
             .toLocaleTimeString('en-US', {
@@ -903,8 +918,7 @@ function generateDailyEvents(startDate, endDate) {
     date.setDate(date.getDate() + 1)
   ) {
     const baseDate = new Date(date);
-    const day = baseDate.getDate();
-    baseDate.setDate(day + 1);
+    baseDate.setDate(baseDate.getDate() + 1)
 
     events.push(
       {
