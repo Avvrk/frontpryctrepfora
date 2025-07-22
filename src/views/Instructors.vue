@@ -532,7 +532,7 @@ async function getInstructors() {
   if (res.status < 299) {
     rows.value = res.data;
     instructorOptions = [];
-    rows.value.forEach((row, index) => {
+    rows.value.forEach((row, index) => {  
       row.index = index + 1;
       instructorOptions.push({ label: row.name, value: row._id });
     });

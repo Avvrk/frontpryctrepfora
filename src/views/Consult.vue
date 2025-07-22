@@ -390,6 +390,7 @@ import { storeReport } from "../store/Reports.js";
 import { format, useQuasar } from "quasar";
 import { jsPDF } from "jspdf";
 import { useRouter } from "vue-router";
+import dataRedConocimiento from '../static/dataRedConocimiento.js';
 
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";

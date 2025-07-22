@@ -592,6 +592,20 @@ async function sendReport() {
   isLoading.value = false;
 }
 
+function parseTimeToMinutes(timeText) {
+  if (!timeText) return NaN;
+  const text = timeText.trim();
+  if (/A\.M\.|P\.M\./i.test(text)) {
+    const [time, period] = text.split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (/P\.M\./i.test(period) && h !== 12) h += 12;
+    if (/A\.M\./i.test(period) && h === 12) h = 0;
+    return h * 60 + m;
+  }
+  const [h, m] = text.split(':').map(Number);
+  return h * 60 + m;
+}
+
 function generateCalendar() {
   yearsMonth.value.forEach((my) => {
     let events = null;
@@ -612,21 +626,16 @@ function generateCalendar() {
       startRange.toISOString().split('T')[0],
       endRange.toISOString().split('T')[0]
     );
+    console.log(eventsCalender.value)
 
     events.forEach((a, i) => {
       eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
         if (a.start.toLocaleDateString('sv-SE') === b.start) {
-          const horaA = a.start
-            .toLocaleTimeString('en-US', {
-              hour12: true,
-              hour: 'numeric',
-              minute: '2-digit',
-            })
-            .replace('AM', 'A.M.')
-            .replace('PM', 'P.M.');
+          const startMinutes = parseTimeToMinutes(b.tstart);
+          const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
+          const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
 
-          console.log('Hora A:', horaA, 'Hora B:', b.tstart);
-          if (horaA === b.tstart) {
+          if (startMinutes >= slotStart && startMinutes < slotEnd) {
             events[i] = b;
             events[i] = { ...b, order: a.order };
           }
@@ -644,8 +653,6 @@ function generateCalendar() {
         element.borderColor = color.borderColor;
         element.textColor = color.textColor;
       }
-
-      console.log(element);
     });
 
     const formatDate = (
