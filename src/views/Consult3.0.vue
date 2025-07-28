@@ -12,35 +12,8 @@
 
     <HeaderLayout title="Reportes" />
     <q-form @submit.prevent.stop="getReport()" novalidate v-if="!existInfo">
-      <div class="row justify-center flex">
-        <div class="col-11 col-sm-3 q-px-md" v-if="opcion == 'ficha'">
-          <q-select
-            :disable="isLoadingData"
-            filled
-            v-model="fiche"
-            label="Ficha"
-            use-input
-            hide-selected
-            options-dense
-            fill-input
-            input-debounce="0"
-            :popup-content-style="{ width: '300px' }"
-            :options="filterFiche"
-            @filter="filterFicha"
-            lazy-rules
-            :rules="[(val) => !!val || 'El campo es requerido']"
-          >
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey"> No results </q-item-section>
-              </q-item>
-            </template>
-            <template v-slot:prepend>
-              <span class="material-symbols-outlined"> dataset </span>
-            </template>
-          </q-select>
-        </div>
-        <div class="col-11 col-sm-3 q-px-md" v-if="opcion == 'instructor'">
+      <div class="row justify-center flex q-mx-xl">
+        <div class="col-11 col-sm-6 q-px-md" v-if="opcion == 'instructor'">
           <q-select
             filled
             type="text"
@@ -129,34 +102,7 @@
             </template>
           </q-select>
         </div>
-        <div class="col-11 col-sm-3 q-px-md" v-if="opcion == 'ambiente'">
-          <q-select
-            filled
-            :disable="isLoadingData"
-            v-model="environment"
-            label="Ambiente"
-            use-input
-            hide-selected
-            options-dense
-            fill-input
-            input-debounce="0"
-            :options="filterEnvironment"
-            @filter="filterEnvi"
-            lazy-rules
-            :rules="[(val) => !!val || 'El campo es requerido']"
-          >
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey"> No results </q-item-section>
-              </q-item>
-            </template>
-            <template v-slot:prepend>
-              <span class="material-symbols-outlined"> person </span>
-            </template>
-          </q-select>
-        </div>
-
-        <div class="col-11 col-sm-3 q-px-md">
+        <div class="col-11 col-sm-6 q-px-md">
           <q-input
             filled
             placeholder="aaaa/mm/dd"
@@ -183,9 +129,7 @@
               </q-icon>
             </template>
           </q-input>
-        </div>
 
-        <div class="col-11 col-sm-3 q-px-md">
           <q-input
             filled
             placeholder="aaaa/mm/dd"
@@ -212,16 +156,17 @@
               </q-icon>
             </template>
           </q-input>
-        </div>
-
-        <div class="col-2 col-sm-1 justify-center flex-center q-mt-sm q-mx-md">
-          <q-btn
-            :loading="loadingData"
-            type="submit"
-            class="bg-green-9 text-white"
+          <div
+            class="flex justify-center q-mt-sm"
           >
-            REPORTE
-          </q-btn>
+            <q-btn
+              :loading="loadingData"
+              type="submit"
+              class="bg-green-9 text-white"
+            >
+              REPORTE
+            </q-btn>
+          </div>
         </div>
       </div>
     </q-form>
@@ -294,20 +239,23 @@
             <spam class="text-weight-bold"> AMBIENTE: </spam
             >{{ nameEnvironment.toUpperCase() }}
           </spam>
-          <div class="time-legend q-mb-md q-pt-xl" v-if="opcion == 'instructor' && existInfo">
-              <div class="legend-item morning">
-                <span class="legend-color"></span>
-                <span>Mañana (6:30 AM - 12:30 PM)</span>
-              </div>
-              <div class="legend-item afternoon">
-                <span class="legend-color"></span>
-                <span>Tarde (12:30 PM - 6:30 PM)</span>
-              </div>
-              <div class="legend-item night">
-                <span class="legend-color"></span>
-                <span>Noche (6:30 PM - 11:30 PM)</span>
-              </div>
+          <div
+            class="time-legend q-mb-md q-pt-xl"
+            v-if="opcion == 'instructor' && existInfo"
+          >
+            <div class="legend-item morning">
+              <span class="legend-color"></span>
+              <span>Mañana (6:30 AM - 12:30 PM)</span>
             </div>
+            <div class="legend-item afternoon">
+              <span class="legend-color"></span>
+              <span>Tarde (12:30 PM - 6:30 PM)</span>
+            </div>
+            <div class="legend-item night">
+              <span class="legend-color"></span>
+              <span>Noche (6:30 PM - 11:30 PM)</span>
+            </div>
+          </div>
         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
@@ -620,13 +568,13 @@ function generateCalendar() {
     const startRange = monthStart > globalStart ? monthStart : globalStart;
     const endRange = monthEnd < globalEnd ? monthEnd : globalEnd;
 
-    console.log(startRange, endRange)
+    console.log(startRange, endRange);
 
     events = generateDailyEvents(
       startRange.toISOString().split('T')[0],
       endRange.toISOString().split('T')[0]
     );
-    console.log(eventsCalender.value)
+    console.log(eventsCalender.value);
 
     events.forEach((a, i) => {
       eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
@@ -925,7 +873,7 @@ function generateDailyEvents(startDate, endDate) {
     date.setDate(date.getDate() + 1)
   ) {
     const baseDate = new Date(date);
-    baseDate.setDate(baseDate.getDate() + 1)
+    baseDate.setDate(baseDate.getDate() + 1);
 
     events.push(
       {

@@ -128,7 +128,8 @@ const cards = ref([
   },
   {
     title: "Instructor TEST",
-    route: "/tipoConsultaTEST/instructor"
+    route: "/tipoConsultaTEST/instructor",
+    image: "/images/instructores.jpg",
   }
 ]);
 
