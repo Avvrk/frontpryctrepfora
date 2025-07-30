@@ -156,9 +156,7 @@
               </q-icon>
             </template>
           </q-input>
-          <div
-            class="flex justify-center q-mt-sm"
-          >
+          <div class="flex justify-center q-mt-sm">
             <q-btn
               :loading="loadingData"
               type="submit"
@@ -260,7 +258,7 @@
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
         <div class="row justify-center hoursmonth" v-if="existInfo">
-          <div >
+          <div>
             HORAS DEL MES:
             {{ Math.ceil(monthHours[yearsMonth[i]] || 0) }} HORAS
           </div>
@@ -601,21 +599,33 @@ function generateCalendar() {
       startRange.toISOString().split('T')[0],
       endRange.toISOString().split('T')[0]
     );
-    console.log(eventsCalender.value);
+    // console.log(eventsCalender.value);
+    const eventoMixto = ref(null);
+    const mixto = ref(0);
 
     events.forEach((a, i) => {
       eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
-        if (a.start.toLocaleDateString('sv-SE') === b.start) {
+        if (mixto.value === 1 && eventoMixto.value) {
+          events[i] = { ...eventoMixto.value, order: a.order };
+          mixto.value = 0;
+          eventoMixto.value = null;
+        } else if (a.start.toLocaleDateString('sv-SE') === b.start) {
           const startMinutes = parseTimeToMinutes(b.tstart);
+          const endMinutes = parseTimeToMinutes(b.tend);
           const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
           const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
 
           if (startMinutes >= slotStart && startMinutes < slotEnd) {
-            events[i] = b;
             events[i] = { ...b, order: a.order };
+
+            if (endMinutes > slotEnd) {
+              mixto.value = 1;
+              eventoMixto.value = b;
+            }
           }
         }
       });
+
       events.sort((a, b) => a.order - b.order);
     });
 
@@ -982,14 +992,15 @@ function generateDailyEvents(startDate, endDate) {
   background-color: #6d83c9;
 }
 
-.hoursmonth{
+.hoursmonth {
   position: absolute;
   left: 50%;
-  
+
   transform: translate(-50%, 300%); /* baja 10px más */
 }
 
-.fc-theme-standard td, .fc-theme-standard th {
+.fc-theme-standard td,
+.fc-theme-standard th {
   border-color: rgb(65, 64, 64);
 }
 
