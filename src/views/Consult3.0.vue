@@ -259,6 +259,12 @@
         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
+        <div class="row justify-center hoursmonth" v-if="existInfo">
+          <div >
+            HORAS DEL MES:
+            {{ Math.ceil(monthHours[yearsMonth[i]] || 0) }} HORAS
+          </div>
+        </div>
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-10 q-pb-lg q-mt-md justify-center flex">
             <FullCalendar id="calender" class="text-uppercase" :options="c">
@@ -457,6 +463,7 @@ let yearsMonth = ref();
 let eventsCalender = ref();
 let calendarOptions = ref([]);
 let existInfo = ref(false);
+let monthHours = ref({});
 let nameInstructor = ref('');
 let dataFiche = ref('');
 let nameEnvironment = ref('');
@@ -512,6 +519,7 @@ function cancel() {
   dataFiche.value = '';
   nameEnvironment.value = '';
   calendarOptions.value = [];
+  monthHours.value = {};
 
   if (role.value == 'USER') {
     useStoreReport.cleanConsult();
@@ -534,6 +542,7 @@ async function sendReport() {
     yearsMonth.value = '';
     eventsCalender.value = '';
     calendarOptions.value = [];
+    monthHours.value = {};
     existInfo.value = false;
   });
 
@@ -552,6 +561,24 @@ function parseTimeToMinutes(timeText) {
   }
   const [h, m] = text.split(':').map(Number);
   return h * 60 + m;
+}
+
+function calculateMonthHours() {
+  monthHours.value = {};
+  if (!eventsCalender.value || !yearsMonth.value) return;
+  yearsMonth.value.forEach((my) => {
+    const monthKey = my.split('-')[1];
+    const events = eventsCalender.value[monthKey] || [];
+    let minutes = 0;
+    events.forEach((ev) => {
+      const start = parseTimeToMinutes(ev.tstart);
+      const end = parseTimeToMinutes(ev.tend);
+      if (!isNaN(start) && !isNaN(end) && end > start) {
+        minutes += end - start;
+      }
+    });
+    monthHours.value[my] = minutes / 60;
+  });
 }
 
 function generateCalendar() {
@@ -682,7 +709,7 @@ async function getReport() {
         nameInstructor.value = res.data.instructor;
         hoursWork1.value = res.data.hoursworkFormacion;
         hoursWork2.value = res.data.hoursworkOthers;
-
+        calculateMonthHours();
         generateCalendar();
       }
     });
@@ -698,6 +725,7 @@ async function getReport() {
         yearsMonth.value = res.data.yearsMonth;
         eventsCalender.value = res.data.events;
         dataFiche.value = `${res.data.fiche} - ${res.data.program}`;
+        calculateMonthHours();
         generateCalendar();
       }
     });
@@ -713,6 +741,7 @@ async function getReport() {
         yearsMonth.value = res.data.yearsMonth;
         eventsCalender.value = res.data.events;
         nameEnvironment.value = res.data.environment;
+        calculateMonthHours();
         generateCalendar();
       }
     });
@@ -843,20 +872,20 @@ function handleThematicareaChange(selectedArea) {
 function changeColor(shift) {
   if (shift.toLocaleLowerCase() == 'jornada mañana') {
     return {
-      backgroundColor: '#FFE87C',
-      borderColor: '#FFE87C',
+      backgroundColor: '#fedd07',
+      borderColor: '#fedd07',
       textColor: '#000000',
     };
   } else if (shift.toLocaleLowerCase() == 'jornada tarde') {
     return {
-      backgroundColor: '#FF8C42',
-      borderColor: '#FF8C42',
+      backgroundColor: '#fe9707',
+      borderColor: '#fe9707',
       textColor: '#FFFFFF',
     };
   } else {
     return {
-      backgroundColor: '#1C1C3A',
-      borderColor: '#1C1C3A',
+      backgroundColor: '#6d83c9',
+      borderColor: '#6d83c9',
       textColor: '#FFFFFF',
     };
   }
@@ -942,14 +971,29 @@ function generateDailyEvents(startDate, endDate) {
 }
 
 .legend-item.morning .legend-color {
-  background-color: #ffe87c;
+  background-color: #fedd07;
 }
 
 .legend-item.afternoon .legend-color {
-  background-color: #ff8c42;
+  background-color: #fe9707;
 }
 
 .legend-item.night .legend-color {
-  background-color: #1c1c3a;
+  background-color: #6d83c9;
+}
+
+.hoursmonth{
+  position: absolute;
+  left: 50%;
+  
+  transform: translate(-50%, 300%); /* baja 10px más */
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: rgb(65, 64, 64);
+}
+
+.fc .fc-scrollgrid-liquid {
+  border-color: rgb(65, 64, 64);
 }
 </style>
