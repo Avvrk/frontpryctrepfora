@@ -618,42 +618,22 @@ function generateCalendar() {
     // console.log(eventsCalender.value);
     const eventoMixto = ref(null);
     const mixto = ref(0);
-    // cambiar los valores del evento para que queden con los datos de un evento que sea de la siguiente jornada
-    /* events.forEach((a, i) => {
-      console.log(eventoMixto.value)
-      eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
-        if (mixto.value === 1) {
-          events[i] = { ...eventoMixto.value, order: a.order };
+
+    events.forEach((a, i) => {
+      console.log(a);
+      if (
+        mixto.value === 1 &&
+        a.start.toLocaleDateString('sv-SE') === eventoMixto.value.start
+      ) {
+        const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
+        const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
+        const startMinutes = parseTimeToMinutes(eventoMixto.value.tnstart);
+
+        if (startMinutes >= slotStart && startMinutes < slotEnd) {
+          events[i] = { ...eventoMixto.value };
           mixto.value = 0;
           eventoMixto.value = null;
-        } else if (a.start.toLocaleDateString('sv-SE') === b.start) {
-          
-          const startMinutes = parseTimeToMinutes(b.tstart);
-          const endMinutes = parseTimeToMinutes(b.tend);
-          const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
-          const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
-
-          if (startMinutes >= slotStart && startMinutes < slotEnd) {
-            events[i] = { ...b, order: a.order };
-
-            if (endMinutes > slotEnd) {
-              let nh = horaSiguiente(b.tstart)
-              console.log({ tstart: nh.tstart, tend: nh.tend }, b)
-              mixto.value = 1;
-              eventoMixto.value = { ...b , tstart: horaSiguiente(b.tstart).tstart, tend: horaSiguiente(b.tend).tend  };
-            }
-          }
         }
-      });
-
-      events.sort((a, b) => a.order - b.order);
-    }); */
-    events.forEach((a, i) => {
-      if (mixto.value === 1 && eventoMixto.value) {
-        events[i] = { ...eventoMixto.value, order: a.order };
-        mixto.value = 0;
-        eventoMixto.value = null;
-        
       }
       eventsCalender.value[my.split('-')[1]].forEach((b) => {
         if (a.start.toLocaleDateString('sv-SE') === b.start) {
@@ -661,16 +641,26 @@ function generateCalendar() {
           const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
 
           if (b.observation == 'JORNADA MIXTA') {
-            mixto.value = 1;
-            eventoMixto.value = { ...b }
-            let nh = horaSiguiente(b.tstart);
-            console.log(nh, b);
+            const sameDayMix = eventsCalender.value[my.split('-')[1]].filter(
+              (e) => e.start === b.start && e.observation === 'JORNADA MIXTA'
+            );
 
             const startMinutes = parseTimeToMinutes(b.tstart);
             // const endMinutes = parseTimeToMinutes(b.tend);
 
             if (startMinutes >= slotStart && startMinutes < slotEnd) {
               events[i] = { ...b, order: a.order };
+            }
+
+            if (sameDayMix.length === 1) {
+              mixto.value = 1;
+              const nh = horaSiguiente(b.tstart);
+              eventoMixto.value = {
+                ...b,
+                tnstart: nh.tstart,
+                tnend: nh.tend,
+                order: a.order + 1,
+              };
             }
           } else if (b.observation == a.observation) {
             events[i] = { ...b, order: a.order };
@@ -1072,12 +1062,7 @@ function generateDailyEvents(startDate, endDate) {
 }
 
 .jornadaMixta {
-  background: linear-gradient(
-    to right,
-    #fedd07 0%,
-    #fe9707 40%,
-    #6d83c9 100%
-  );
+  background: linear-gradient(to right, #fedd07 0%, #fe9707 40%, #6d83c9 100%);
   /* color: white !important; */
   border: 1px solid transparent !important;
 }
