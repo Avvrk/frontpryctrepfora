@@ -390,23 +390,6 @@
         </div>
       </div>
 
-      <div
-        class="q-mb-md row"
-        style="display: grid; justify-content: center"
-        v-if="existInfo"
-      >
-        <tableFormacion
-          :events="eventsCalender"
-          :existInfo="existInfo"
-          :print="print"
-        />
-
-        <tableOtrasActividades
-          :events="eventsCalender"
-          :existInfo="existInfo"
-          :print="print"
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -601,6 +584,7 @@ function generateCalendar() {
     let data = null;
 
     const [year, month] = my.split('-');
+    const calendarMonthEvents = eventsCalender.value?.[month] || [];
     const monthStart = new Date(`${year}-${month}-01`);
     const monthEnd = new Date(year, month, 0);
     const globalStart = new Date(fStart.value.replace(/\//g, '-'));
@@ -635,13 +619,13 @@ function generateCalendar() {
           eventoMixto.value = null;
         }
       }
-      eventsCalender.value[my.split('-')[1]].forEach((b) => {
+      calendarMonthEvents.forEach((b) => {
         if (a.start.toLocaleDateString('sv-SE') === b.start) {
           const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
           const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
 
           if (b.observation == 'JORNADA MIXTA') {
-            const sameDayMix = eventsCalender.value[my.split('-')[1]].filter(
+            const sameDayMix = calendarMonthEvents.filter(
               (e) => e.start === b.start && e.observation === 'JORNADA MIXTA'
             );
 
