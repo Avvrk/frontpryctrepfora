@@ -416,7 +416,7 @@ import { ref, onBeforeMount, computed, nextTick } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
-import { format, useQuasar } from 'quasar';
+import { event, format, useQuasar } from 'quasar';
 import { jsPDF } from 'jspdf';
 import { useRouter } from 'vue-router';
 import dataRedConocimiento from '../static/dataRedConocimiento.js';
@@ -579,10 +579,26 @@ function calculateMonthHours() {
   });
 }
 
+function horaSiguiente(text) {
+  const inicMañana = 390;
+  const finMañana = 749;
+  const inicTarde = 750;
+  const finTarde = 1109;
+  // const inicNoche = 1110;
+  // const finNoche = 1410;
+  const nhora = parseTimeToMinutes(text);
+
+  if (nhora >= inicMañana && nhora <= finMañana) {
+    return { tstart: '12:30 P.M.', tend: '6:29 P.M.' };
+  } else if (nhora >= inicTarde && nhora <= finTarde) {
+    return { tstart: '6:30 P.M.', tend: '11:30 P.M.' };
+  }
+}
+
 function generateCalendar() {
   yearsMonth.value.forEach((my) => {
     let events = null;
-    let color = null;
+    let data = null;
 
     const [year, month] = my.split('-');
     const monthStart = new Date(`${year}-${month}-01`);
@@ -602,14 +618,16 @@ function generateCalendar() {
     // console.log(eventsCalender.value);
     const eventoMixto = ref(null);
     const mixto = ref(0);
-
-    events.forEach((a, i) => {
+    // cambiar los valores del evento para que queden con los datos de un evento que sea de la siguiente jornada
+    /* events.forEach((a, i) => {
+      console.log(eventoMixto.value)
       eventsCalender.value[my.split('-')[1]].forEach((b, j) => {
-        if (mixto.value === 1 && eventoMixto.value) {
+        if (mixto.value === 1) {
           events[i] = { ...eventoMixto.value, order: a.order };
           mixto.value = 0;
           eventoMixto.value = null;
         } else if (a.start.toLocaleDateString('sv-SE') === b.start) {
+          
           const startMinutes = parseTimeToMinutes(b.tstart);
           const endMinutes = parseTimeToMinutes(b.tend);
           const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
@@ -619,24 +637,63 @@ function generateCalendar() {
             events[i] = { ...b, order: a.order };
 
             if (endMinutes > slotEnd) {
+              let nh = horaSiguiente(b.tstart)
+              console.log({ tstart: nh.tstart, tend: nh.tend }, b)
               mixto.value = 1;
-              eventoMixto.value = b;
+              eventoMixto.value = { ...b , tstart: horaSiguiente(b.tstart).tstart, tend: horaSiguiente(b.tend).tend  };
             }
           }
         }
       });
 
       events.sort((a, b) => a.order - b.order);
+    }); */
+    events.forEach((a, i) => {
+      if (mixto.value === 1 && eventoMixto.value) {
+        events[i] = { ...eventoMixto.value, order: a.order };
+        mixto.value = 0;
+        eventoMixto.value = null;
+        
+      }
+      eventsCalender.value[my.split('-')[1]].forEach((b) => {
+        if (a.start.toLocaleDateString('sv-SE') === b.start) {
+          const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
+          const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
+
+          if (b.observation == 'JORNADA MIXTA') {
+            mixto.value = 1;
+            eventoMixto.value = { ...b }
+            let nh = horaSiguiente(b.tstart);
+            console.log(nh, b);
+
+            const startMinutes = parseTimeToMinutes(b.tstart);
+            // const endMinutes = parseTimeToMinutes(b.tend);
+
+            if (startMinutes >= slotStart && startMinutes < slotEnd) {
+              events[i] = { ...b, order: a.order };
+            }
+          } else if (b.observation == a.observation) {
+            events[i] = { ...b, order: a.order };
+          }
+        }
+      });
+      events.sort((a, b) => a.order - b.order);
     });
+    console.log(events);
 
     // events = eventsCalender.value[my.split('-')[1]];
 
     events.forEach((element) => {
       if (element.code) {
-        color = changeColor(element.observation);
-        element.backgroundColor = color.backgroundColor;
-        element.borderColor = color.borderColor;
-        element.textColor = color.textColor;
+        data = changeColor(element.observation);
+        if (!data.className) {
+          element.backgroundColor = data.backgroundColor;
+          element.borderColor = data.borderColor;
+          element.textColor = data.textColor;
+        } else {
+          element.classNames = data.className;
+          element.textColor = data.textColor;
+        }
       }
     });
 
@@ -880,16 +937,22 @@ function handleThematicareaChange(selectedArea) {
 }
 
 function changeColor(shift) {
-  if (shift.toLocaleLowerCase() == 'jornada mañana') {
+  const shiftLower = shift.toLowerCase();
+  if (shiftLower === 'jornada mañana') {
     return {
       backgroundColor: '#fedd07',
       borderColor: '#fedd07',
       textColor: '#000000',
     };
-  } else if (shift.toLocaleLowerCase() == 'jornada tarde') {
+  } else if (shiftLower === 'jornada tarde') {
     return {
       backgroundColor: '#fe9707',
       borderColor: '#fe9707',
+      textColor: '#FFFFFF',
+    };
+  } else if (shiftLower === 'jornada mixta') {
+    return {
+      className: 'jornadaMixta',
       textColor: '#FFFFFF',
     };
   } else {
@@ -1006,5 +1069,16 @@ function generateDailyEvents(startDate, endDate) {
 
 .fc .fc-scrollgrid-liquid {
   border-color: rgb(65, 64, 64);
+}
+
+.jornadaMixta {
+  background: linear-gradient(
+    to right,
+    #fedd07 0%,
+    #fe9707 40%,
+    #6d83c9 100%
+  );
+  /* color: white !important; */
+  border: 1px solid transparent !important;
 }
 </style>
