@@ -12,7 +12,11 @@
 
     <HeaderLayout title="Reportes" />
     <q-form @submit.prevent.stop="getReport()" novalidate v-if="!existInfo">
-      <div class="row justify-center flex q-mx-xl">
+      <div class="row justify-center column q-mx-xl">
+        <div class="q-gutter-sm">
+          <q-radio v-model="shape" val="instructor" label="Por Instructor" />
+          <q-radio v-model="shape" val="area" label="Por Area" />
+        </div>
         <div class="col-11 col-sm-6 q-px-md" v-if="opcion == 'instructor'">
           <q-select
             filled
@@ -78,6 +82,7 @@
             </template>
           </q-select>
           <q-select
+          v-if="shape == 'instructor'"
             filled
             :disable="!thematicarea || !knowledge"
             v-model="inst"
@@ -390,6 +395,23 @@
         </div>
       </div>
 
+      <!-- <div
+        class="q-mb-md row"
+        style="display: grid; justify-content: center"
+        v-if="existInfo"
+      >
+        <tableFormacion
+          :events="eventsCalender"
+          :existInfo="existInfo"
+          :print="print"
+        />
+
+        <tableOtrasActividades
+          :events="eventsCalender"
+          :existInfo="existInfo"
+          :print="print"
+        />
+      </div> -->
     </div>
   </div>
 </template>
@@ -421,6 +443,8 @@ import HeaderLayout from '../layouts/headerViewsLayout.vue';
 import { symOutlinedAirlineSeatFlatAngled } from '@quasar/extras/material-symbols-outlined';
 
 const $q = useQuasar();
+
+const shape = ref([]);
 
 const useFiches = storeFiles();
 const useInstructors = storeInst();
