@@ -82,7 +82,7 @@
             </template>
           </q-select>
           <q-select
-          v-if="shape == 'instructor'"
+            v-if="shape == 'instructor'"
             filled
             :disable="!thematicarea || !knowledge"
             v-model="inst"
@@ -243,22 +243,58 @@
             >{{ nameEnvironment.toUpperCase() }}
           </spam>
           <div
-            class="time-legend q-mb-md q-pt-xl"
+            class="time-legend q-mb-md q-pt-xl column"
             v-if="opcion == 'instructor' && existInfo"
           >
+            <!-- Mañana -->
             <div class="legend-item morning">
-              <span class="legend-color"></span>
-              <span>Mañana (6:30 AM - 12:30 PM)</span>
+              <span class="legend-color" aria-label="Mañana"></span>
+              <span class="legend-text">Mañana</span>
+              <q-tooltip anchor="top left" self="center left" :offset="[25,20]">
+                {{ shiftRanges.morning }}
+              </q-tooltip>
             </div>
+
+            <!-- Tarde -->
             <div class="legend-item afternoon">
-              <span class="legend-color"></span>
-              <span>Tarde (12:30 PM - 6:30 PM)</span>
+              <span class="legend-color" aria-label="Tarde"></span>
+              <span class="legend-text">Tarde</span>
+              <q-tooltip anchor="top left" self="center left" :offset="[25,20]">
+                {{ shiftRanges.afternoon }}
+              </q-tooltip>
             </div>
+
+            <!-- Noche -->
             <div class="legend-item night">
-              <span class="legend-color"></span>
-              <span>Noche (6:30 PM - 11:30 PM)</span>
+              <span class="legend-color" aria-label="Noche"></span>
+              <span class="legend-text">Noche</span>
+              <q-tooltip anchor="top left" self="center left" :offset="[25,20]">
+                {{ shiftRanges.night }}
+              </q-tooltip>
             </div>
           </div>
+        </div>
+      </div>
+      <div
+        class="q-mt-md q-mb-lg flex items-center justify-center gap-3"
+        v-if="shape === 'area' && existInfo"
+      >
+        <div
+          v-for="p in legendInstructors"
+          :key="p.id"
+          class="flex items-center q-mr-md"
+        >
+          <span
+            :style="{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              display: 'inline-block',
+              background: p.color,
+              marginRight: '6px',
+            }"
+          ></span>
+          <span class="text-caption">{{ p.name }}</span>
         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
@@ -453,6 +489,12 @@ const useEnvir = storeEnv();
 const useUser = storeUser();
 const role = ref(useUser.getRole());
 
+const shiftRanges = {
+  morning: '6:30 AM - 12:30 PM',
+  afternoon: '12:30 PM - 6:30 PM',
+  night: '6:30 PM - 11:30 PM',
+};
+let legendInstructors = ref([]); // contiene los instructores con sus colores para el legend
 let fiche = ref();
 let inst = ref();
 let thematicarea = ref();
@@ -617,18 +659,14 @@ function generateCalendar() {
     const startRange = monthStart > globalStart ? monthStart : globalStart;
     const endRange = monthEnd < globalEnd ? monthEnd : globalEnd;
 
-    console.log(startRange, endRange);
-
     events = generateDailyEvents(
       startRange.toISOString().split('T')[0],
       endRange.toISOString().split('T')[0]
     );
-    // console.log(eventsCalender.value);
     const eventoMixto = ref(null);
     const mixto = ref(0);
 
     events.forEach((a, i) => {
-      console.log(a);
       if (
         mixto.value === 1 &&
         a.start.toLocaleDateString('sv-SE') === eventoMixto.value.start
@@ -677,7 +715,6 @@ function generateCalendar() {
       });
       events.sort((a, b) => a.order - b.order);
     });
-    console.log(events);
 
     // events = eventsCalender.value[my.split('-')[1]];
 
@@ -757,9 +794,68 @@ async function getEnvironments() {
   });
 }
 
+// es para la generacion del calendario, ya que puede que
+// todos los instructores que se pidan no tengan formacion
+// entonces el backend solo votara el error de vacio, el codigo
+// que se uso es como esta en el backend
+function computeMonthsYears(fstartStr, fendStr) {
+  const toISO = (s) => (s || '').replace(/\//g, '-'); // "aaaa/mm/dd" -> "aaaa-mm-dd"
+  const start = new Date(toISO(fstartStr));
+  const end = new Date(toISO(fendStr));
+
+  const months = []; // ["06","07","08"]
+  const yearsMonth = []; // ["2025-06","2025-07","2025-08"]
+
+  // usamos UTC como en el back (getUTCMonth / getUTCFullYear)
+  let cursor = new Date(
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1)
+  );
+  const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
+
+  while (cursor <= endUTC) {
+    const mm = String(cursor.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = cursor.getUTCFullYear();
+    months.push(mm);
+    yearsMonth.push(`${yyyy}-${mm}`);
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return { months, yearsMonth };
+}
+
 async function getReport() {
-  loadingData.value = true;
-  if (opcion.value == 'instructor') {
+  if (shape.value == 'area') {
+    console.log(copyFilterInst.value);
+    const list = copyFilterInst.value.map((i) => ({
+      id: i.value,
+      name: i.label,
+      color: generateColor(),
+    }));
+
+    console.log(list);
+    legendInstructors.value = list;
+
+    const { months: mm, yearsMonth: yymm } = computeMonthsYears(
+      fStart.value,
+      fEnd.value
+    );
+    months.value = mm;
+    yearsMonth.value = yymm;
+    generateCalendar();
+
+    //   const areaByInstructor = {};
+
+    //   for (const {id, name} of list) {
+    //      if (!areaByInstructor[name]) areaByInstructor[name] = [];
+
+    //       const res = await useStoreReport.generateReportByInstr({
+    //         instructor: id,
+    //         fstart: fStart.value,
+    //         fend: fEnd.value,
+    //       })
+
+    //       console.log(res)
+    //   }
+  } else {
     let data = {
       instructor: inst.value.value,
       fstart: fStart.value,
@@ -767,6 +863,7 @@ async function getReport() {
     };
 
     await useStoreReport.generateReportByInstr(data).then((res) => {
+      console.log(res);
       if (res.status <= 201) {
         months.value = res.data.months;
         yearsMonth.value = res.data.yearsMonth;
@@ -774,38 +871,6 @@ async function getReport() {
         nameInstructor.value = res.data.instructor;
         hoursWork1.value = res.data.hoursworkFormacion;
         hoursWork2.value = res.data.hoursworkOthers;
-        calculateMonthHours();
-        generateCalendar();
-      }
-    });
-  } else if (opcion.value == 'ficha') {
-    let data = {
-      fiche: fiche.value.value,
-      fstart: fStart.value,
-      fend: fEnd.value,
-    };
-    await useStoreReport.generateReport(data).then((res) => {
-      if (res.status <= 201) {
-        months.value = res.data.months;
-        yearsMonth.value = res.data.yearsMonth;
-        eventsCalender.value = res.data.events;
-        dataFiche.value = `${res.data.fiche} - ${res.data.program}`;
-        calculateMonthHours();
-        generateCalendar();
-      }
-    });
-  } else {
-    let data = {
-      environment: environment.value.value,
-      fstart: fStart.value,
-      fend: fEnd.value,
-    };
-    await useStoreReport.generateReportByEnver(data).then((res) => {
-      if (res.status <= 201) {
-        months.value = res.data.months;
-        yearsMonth.value = res.data.yearsMonth;
-        eventsCalender.value = res.data.events;
-        nameEnvironment.value = res.data.environment;
         calculateMonthHours();
         generateCalendar();
       }
@@ -1010,6 +1075,15 @@ function generateDailyEvents(startDate, endDate) {
   }
 
   return events;
+}
+
+function generateColor() {
+  const letter = '01233456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letter[Math.floor(Math.random() * 16)];
+  }
+  return color;
 }
 </script>
 
