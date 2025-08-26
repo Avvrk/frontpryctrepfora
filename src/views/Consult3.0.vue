@@ -220,7 +220,7 @@
 
     <div id="calenderPrint">
       <div class="row justify-center flex">
-        <div class="col-9 q-mb-md q-mt-sm">
+        <div class="col-9 q-mb-md q-mt-sm" v-if="shape === 'instructor' && existInfo">
           <spam class="text-h6" v-if="opcion == 'instructor' && existInfo">
             <spam class="text-weight-bold"> INSTRUCTOR: </spam
             >{{ nameInstructor.toUpperCase() }}
@@ -242,52 +242,19 @@
             <spam class="text-weight-bold"> AMBIENTE: </spam
             >{{ nameEnvironment.toUpperCase() }}
           </spam>
-          <div
-            class="time-legend q-mb-md q-pt-xl column"
-            v-if="opcion == 'instructor' && existInfo"
-          >
-            <!-- Mañana -->
-            <div class="legend-item morning">
-              <span class="legend-color" aria-label="Mañana"></span>
-              <span class="legend-text">Mañana</span>
-              <q-tooltip anchor="top left" self="center left" :offset="[25,20]">
-                {{ shiftRanges.morning }}
-              </q-tooltip>
-            </div>
-
-            <!-- Tarde -->
-            <div class="legend-item afternoon">
-              <span class="legend-color" aria-label="Tarde"></span>
-              <span class="legend-text">Tarde</span>
-              <q-tooltip anchor="top left" self="center left" :offset="[25,20]">
-                {{ shiftRanges.afternoon }}
-              </q-tooltip>
-            </div>
-
-            <!-- Noche -->
-            <div class="legend-item night">
-              <span class="legend-color" aria-label="Noche"></span>
-              <span class="legend-text">Noche</span>
-              <q-tooltip anchor="top left" self="center left" :offset="[25,20]">
-                {{ shiftRanges.night }}
-              </q-tooltip>
-            </div>
-          </div>
         </div>
       </div>
-      <div
-        class="q-mt-md q-mb-lg flex items-center justify-center gap-3"
-        v-if="shape === 'area' && existInfo"
-      >
+      <div class="te" v-if="shape === 'area' && existInfo">
+        <!-- <p>q-mt-md q-mb-lg flex items-center justify-center gap-3</p> -->
         <div
           v-for="p in legendInstructors"
           :key="p.id"
-          class="flex items-center q-mr-md"
+          class="flex items-center q-mr-md to"
         >
           <span
             :style="{
-              width: '10px',
-              height: '10px',
+              width: '20px',
+              height: '20px',
               borderRadius: '50%',
               display: 'inline-block',
               background: p.color,
@@ -295,6 +262,38 @@
             }"
           ></span>
           <span class="text-caption">{{ p.name }}</span>
+        </div>
+      </div>
+      <div
+        class="time-legend q-ml-xl q-pt-xl column"
+        style="position: fixed; left: 0; bottom: 10%;"
+        v-if="opcion == 'instructor' && existInfo"
+      >
+        <!-- Mañana -->
+        <div class="legend-item morning">
+          <span class="legend-color" aria-label="Mañana"></span>
+          <span class="legend-text">Mañana</span>
+          <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
+            {{ shiftRanges.morning }}
+          </q-tooltip>
+        </div>
+
+        <!-- Tarde -->
+        <div class="legend-item afternoon">
+          <span class="legend-color" aria-label="Tarde"></span>
+          <span class="legend-text">Tarde</span>
+          <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
+            {{ shiftRanges.afternoon }}
+          </q-tooltip>
+        </div>
+
+        <!-- Noche -->
+        <div class="legend-item night">
+          <span class="legend-color" aria-label="Noche"></span>
+          <span class="legend-text">Noche</span>
+          <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
+            {{ shiftRanges.night }}
+          </q-tooltip>
         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
@@ -1147,5 +1146,23 @@ function generateColor() {
   background: linear-gradient(to right, #fedd07 0%, #fe9707 40%, #6d83c9 100%);
   /* color: white !important; */
   border: 1px solid transparent !important;
+}
+
+.to {
+  width: 300px;
+}
+
+.te {
+  border: 1px solid black;
+  border-radius: 10px;
+  width: 90vw;
+  padding: 30px 10px 30px 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  position: relative;
+  left: 50%;
+  transform: translate(-50%);
+  margin-top: 30px;
 }
 </style>
