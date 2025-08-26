@@ -220,7 +220,10 @@
 
     <div id="calenderPrint">
       <div class="row justify-center flex">
-        <div class="col-9 q-mb-md q-mt-sm" v-if="shape === 'instructor' && existInfo">
+        <div
+          class="col-9 q-mb-md q-mt-sm"
+          v-if="shape === 'instructor' && existInfo"
+        >
           <spam class="text-h6" v-if="opcion == 'instructor' && existInfo">
             <spam class="text-weight-bold"> INSTRUCTOR: </spam
             >{{ nameInstructor.toUpperCase() }}
@@ -266,7 +269,7 @@
       </div>
       <div
         class="time-legend q-ml-xl q-pt-xl column"
-        style="position: fixed; left: 0; bottom: 10%;"
+        style="position: fixed; left: 0; bottom: 10%"
         v-if="opcion == 'instructor' && existInfo"
       >
         <!-- Mañana -->
@@ -839,21 +842,29 @@ async function getReport() {
     );
     months.value = mm;
     yearsMonth.value = yymm;
+    
+
+    for (const prof of legendInstructors.value) {
+      try {
+        const res = await useStoreReport.generateReportByInstr({
+          instructor: prof.id,
+          fstart: fStart.value,
+          fend: fEnd.value,
+        });
+
+        // cada profe tendrá su registro en un objeto
+        prof.events = [];
+
+        if (res?.status <= 201 && res.data?.events) {
+          prof.events = res.data.events; // aquí te llega { "06": [...], "07": [...] }
+        }
+      } catch (e) {
+        // si falla, simplemente no tiene eventos
+        prof.events = [];
+      }
+    }
+    console.log(legendInstructors.value)
     generateCalendar();
-
-    //   const areaByInstructor = {};
-
-    //   for (const {id, name} of list) {
-    //      if (!areaByInstructor[name]) areaByInstructor[name] = [];
-
-    //       const res = await useStoreReport.generateReportByInstr({
-    //         instructor: id,
-    //         fstart: fStart.value,
-    //         fend: fEnd.value,
-    //       })
-
-    //       console.log(res)
-    //   }
   } else {
     let data = {
       instructor: inst.value.value,
