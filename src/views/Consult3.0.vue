@@ -482,7 +482,7 @@ import { symOutlinedAirlineSeatFlatAngled } from '@quasar/extras/material-symbol
 
 const $q = useQuasar();
 
-const shape = ref([]);
+const shape = ref('instructor');
 
 const useFiches = storeFiles();
 const useInstructors = storeInst();
@@ -651,6 +651,9 @@ function generateCalendar() {
     let events = null;
     let data = null;
 
+    // if (shape.value === 'area') {
+    //   events = eventsCalender.value[my.split('-')[1]];
+    // } else {
     const [year, month] = my.split('-');
     const calendarMonthEvents = eventsCalender.value?.[month] || [];
     const monthStart = new Date(`${year}-${month}-01`);
@@ -665,6 +668,10 @@ function generateCalendar() {
       startRange.toISOString().split('T')[0],
       endRange.toISOString().split('T')[0]
     );
+
+    if (shape.value === 'area') {
+
+    }
     const eventoMixto = ref(null);
     const mixto = ref(0);
 
@@ -733,6 +740,7 @@ function generateCalendar() {
         }
       }
     });
+    // }
 
     const formatDate = (
       my.split('-')[0] +
@@ -756,6 +764,9 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
+      datesSet: function () {
+        addColors();
+      },
     });
   });
 
@@ -842,7 +853,6 @@ async function getReport() {
     );
     months.value = mm;
     yearsMonth.value = yymm;
-    
 
     for (const prof of legendInstructors.value) {
       try {
@@ -863,7 +873,7 @@ async function getReport() {
         prof.events = [];
       }
     }
-    console.log(legendInstructors.value)
+    console.log(legendInstructors.value);
     generateCalendar();
   } else {
     let data = {
@@ -1060,6 +1070,7 @@ function generateDailyEvents(startDate, endDate) {
         backgroundColor: '#ffffff',
         borderColor: '#929292',
         order: 1,
+        className: 'jornada-mañana',
       },
       {
         start: new Date(baseDate.setHours(12, 30, 0, 0)),
@@ -1070,6 +1081,7 @@ function generateDailyEvents(startDate, endDate) {
         backgroundColor: '#ffffff',
         borderColor: '#929292',
         order: 2,
+        className: 'jornada-tarde',
       },
       {
         start: new Date(baseDate.setHours(18, 30, 0, 0)),
@@ -1080,6 +1092,7 @@ function generateDailyEvents(startDate, endDate) {
         backgroundColor: '#ffffff',
         borderColor: '#929292',
         order: 3,
+        className: 'jornada-noche',
       }
     );
   }
@@ -1094,6 +1107,15 @@ function generateColor() {
     color += letter[Math.floor(Math.random() * 16)];
   }
   return color;
+}
+
+function addColors() {
+  nextTick(() => {
+    document.querySelectorAll('.fc-day').forEach((dayEl) => {
+      const dateStr = dayEl.getAttribute('data-date');
+      console.log('Fecha del día:', dateStr);
+    });
+  });
 }
 </script>
 
