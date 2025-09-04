@@ -1101,7 +1101,7 @@ function generateDailyEvents(startDate, endDate) {
 }
 
 function generateColor() {
-  const letter = '01233456789ABCDEF';
+  const letter = '0123456789ABCDEF';
   let color = '#';
   for (let i = 0; i < 6; i++) {
     color += letter[Math.floor(Math.random() * 16)];
