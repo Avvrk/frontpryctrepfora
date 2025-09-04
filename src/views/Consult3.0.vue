@@ -224,27 +224,27 @@
           class="col-9 q-mb-md q-mt-sm"
           v-if="shape === 'instructor' && existInfo"
         >
-          <spam class="text-h6" v-if="opcion == 'instructor' && existInfo">
-            <spam class="text-weight-bold"> INSTRUCTOR: </spam
+          <span class="text-h6" v-if="opcion == 'instructor' && existInfo">
+            <span class="text-weight-bold"> INSTRUCTOR: </span
             >{{ nameInstructor.toUpperCase() }}
             <br />
-            <spam class="text-weight-bold"> HORAS DE FORMACIÓN: </spam
+            <span class="text-weight-bold"> HORAS DE FORMACIÓN: </span
             >{{ Math.ceil(hoursWork1) }} HORAS
             <br />
-            <spam class="text-weight-bold"> HORAS DE OTRAS ACTIVIDADES: </spam
+            <span class="text-weight-bold"> HORAS DE OTRAS ACTIVIDADES: </span
             >{{ Math.ceil(hoursWork2) }} HORAS
             <br />
-            <spam class="text-weight-bold"> TOTAL DE HORAS: </spam
+            <span class="text-weight-bold"> TOTAL DE HORAS: </span
             >{{ Math.ceil(hoursWork1 + hoursWork2) }} HORAS
-          </spam>
-          <spam class="text-h6" v-if="opcion == 'ficha' && existInfo">
-            <spam class="text-weight-bold"> FICHA: </spam
+          </span>
+          <span class="text-h6" v-if="opcion == 'ficha' && existInfo">
+            <span class="text-weight-bold"> FICHA: </span
             >{{ dataFiche.toUpperCase() }}
-          </spam>
-          <spam class="text-h6" v-if="opcion == 'ambiente' && existInfo">
-            <spam class="text-weight-bold"> AMBIENTE: </spam
+          </span>
+          <span class="text-h6" v-if="opcion == 'ambiente' && existInfo">
+            <span class="text-weight-bold"> AMBIENTE: </span
             >{{ nameEnvironment.toUpperCase() }}
-          </spam>
+          </span>
         </div>
       </div>
       <div class="te" v-if="shape === 'area' && existInfo">
