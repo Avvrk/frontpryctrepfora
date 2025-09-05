@@ -531,6 +531,13 @@ let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
 
+const clearDataCalender = () => {
+  calendarOptions.value = [];
+  existInfo.value = false;
+  legendInstructors.value = [];
+  monthHours.value = {};
+};
+
 const router = useRouter();
 
 const useStoreReport = storeReport();
@@ -1106,7 +1113,7 @@ function generateColor() {
 
 function addColors() {
   nextTick(() => {
-    // remove previous indicators to avoid duplicates when navigating
+    // eliminar indicadores anteriores para evitar duplicados al navegar
     document.querySelectorAll('.inst-dot-container').forEach((el) => el.remove());
 
     document.querySelectorAll('.fc-day').forEach((dayEl) => {
