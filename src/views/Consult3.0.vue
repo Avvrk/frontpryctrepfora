@@ -1138,34 +1138,52 @@ function generateColor() {
   return color;
 }
 
+function shiftClassByTime(time) {
+  const minutes = parseTimeToMinutes(time);
+  if (minutes >= 390 && minutes < 750) return 'jornada-mañana';
+  if (minutes >= 750 && minutes < 1110) return 'jornada-tarde';
+  if (minutes >= 1110 && minutes < 1410) return 'jornada-noche';
+  return null;
+}
+
 function addColors() {
   nextTick(() => {
     // eliminar indicadores anteriores para evitar duplicados al navegar
     document.querySelectorAll('.inst-dot-container').forEach((el) => el.remove());
 
-    document.querySelectorAll('.fc-day').forEach((dayEl) => {
+    document.querySelectorAll('.fc-daygrid-day').forEach((dayEl) => {
       const dateStr = dayEl.getAttribute('data-date');
       if (!dateStr) return;
 
       const [, month] = dateStr.split('-');
-      const start = dateStr;
-
-      const container = document.createElement('div');
-      container.className = 'inst-dot-container';
-      dayEl.style.position = 'relative';
 
       legendInstructors.value.forEach((inst) => {
-        if (inst.events?.[month]?.[start]) {
+        const events = inst.events?.[month]?.[dateStr] || [];
+        const shifts = new Set();
+
+        (Array.isArray(events) ? events : [events]).forEach((ev) => {
+          const cls = shiftClassByTime(ev.tstart);
+          if (cls) shifts.add(cls);
+        });
+
+        shifts.forEach((cls) => {
+          const target = dayEl.querySelector(`.${cls}`);
+          if (!target) return;
+
+          let container = target.querySelector('.inst-dot-container');
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'inst-dot-container';
+            target.style.position = 'relative';
+            target.appendChild(container);
+          }
+
           const dot = document.createElement('span');
           dot.className = 'inst-dot';
           dot.style.backgroundColor = inst.color;
           container.appendChild(dot);
-        }
+        });
       });
-
-      if (container.children.length > 0) {
-        dayEl.appendChild(container);
-      }
     });
   });
 }
