@@ -326,7 +326,7 @@
         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
-        <div class="row justify-center hoursmonth" v-if="existInfo">
+        <div class="row justify-center hoursmonth" v-if="existInfo && Math.ceil(monthHours[yearsMonth[i]] || 0) > 0">
           <div>
             HORAS DEL MES:
             {{ Math.ceil(monthHours[yearsMonth[i]] || 0) }} HORAS
@@ -885,11 +885,14 @@ async function getReport() {
 
     for (const prof of legendInstructors.value) {
       try {
-        const res = await useStoreReport.generateReportByInstr({
-          instructor: prof.id,
-          fstart: fStart.value,
-          fend: fEnd.value,
-        });
+        const res = await useStoreReport.generateReportByInstr(
+          {
+            instructor: prof.id,
+            fstart: fStart.value,
+            fend: fEnd.value,
+          },
+          false
+        );
 
         // cada profe tendrá su registro en un objeto
         prof.events = [];
@@ -1205,8 +1208,8 @@ function addColors() {
 }
 
 .inst-dot {
-  width: 6px;
-  height: 6px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   display: inline-block;
 }
