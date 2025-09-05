@@ -1162,14 +1162,17 @@ function addColors() {
 
       legendInstructors.value.forEach((inst) => {
         const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
-        const shifts = new Set();
+        const eventsByShift = {};
 
         (Array.isArray(events) ? events : [events]).forEach((ev) => {
           const cls = shiftClassByTime(ev.tstart);
-          if (cls) shifts.add(cls);
+          if (cls) {
+            if (!eventsByShift[cls]) eventsByShift[cls] = [];
+            eventsByShift[cls].push(ev);
+          }
         });
 
-        shifts.forEach((cls) => {
+        Object.keys(eventsByShift).forEach((cls) => {
           const target = dayEl.querySelector(`.${cls}`);
           if (!target) return;
 
@@ -1184,6 +1187,13 @@ function addColors() {
           const dot = document.createElement('span');
           dot.className = 'inst-dot';
           dot.style.backgroundColor = inst.color;
+
+          const tooltipLines = eventsByShift[cls].map(
+            (ev) =>
+              `FICHA: ${ev.fiche}\nINSTRUCTOR: ${inst.name}\nAMBIENTE: ${ev.environment}\nPROGRAMA: ${ev.program}\nOBSERVACIÓN: ${ev.observation}\nHORARIO: ${ev.tstart} - ${ev.tend}`
+          );
+          dot.title = tooltipLines.join('\n\n');
+
           container.appendChild(dot);
         });
       });
