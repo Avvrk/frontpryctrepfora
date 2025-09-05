@@ -107,6 +107,32 @@
             </template>
           </q-select>
         </div>
+        <div class="col-11 col-sm-6 q-px-md" v-if="opcion == 'ambiente'">
+          <q-select
+            filled
+            :disable="isLoadingData"
+            v-model="environment"
+            label="Ambiente"
+            use-input
+            hide-selected
+            options-dense
+            fill-input
+            input-debounce="0"
+            :options="filterEnvironment"
+            @filter="filterEnvi"
+            lazy-rules
+            :rules="[(val) => !!val || 'El campo es requerido']"
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey"> No results </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:prepend>
+              <span class="material-symbols-outlined"> person </span>
+            </template>
+          </q-select>
+        </div>
         <div class="col-11 col-sm-6 q-px-md">
           <q-input
             filled
