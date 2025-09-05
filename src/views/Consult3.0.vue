@@ -673,9 +673,11 @@ function generateCalendar() {
 
     }
     const pendientesMixtos = [];
+    const pendientesKeys = new Set(); // 🔐 aquí guardamos las llaves únicas
 
     events.forEach((a, i) => {
       const dayKey = a.start.toLocaleDateString('sv-SE');
+
       calendarMonthEvents.forEach((b) => {
         if (dayKey === b.start) {
           const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
@@ -683,41 +685,60 @@ function generateCalendar() {
 
           if (b.observation === 'JORNADA MIXTA') {
             const startMinutes = parseTimeToMinutes(b.tstart);
+
             if (startMinutes >= slotStart && startMinutes < slotEnd) {
               events[i] = { ...b, order: a.order };
             }
 
             const nh = horaSiguiente(b.tstart);
-            pendientesMixtos.push({
+
+            // ✅ usa tstart/tend y crea llave única
+            const mixtoItem = {
               ...b,
-              tnstart: nh.tstart,
-              tnend: nh.tend,
+              tstart: nh.tstart,
+              tend: nh.tend,
               order: a.order + 1,
               start: dayKey,
-            });
+            };
+
+            // Construye una llave con los campos que definen unicidad
+            const k = [
+              mixtoItem.start,                // día
+              mixtoItem.tstart, mixtoItem.tend, // rango hora
+              b.fiche ?? b.code ?? b.title ?? '' // identifica “qué” evento es
+            ].join('|');
+
+            if (!pendientesKeys.has(k)) {
+              pendientesMixtos.push(mixtoItem);
+              pendientesKeys.add(k);
+            }
+
           } else if (b.observation == a.observation) {
             events[i] = { ...b, order: a.order };
           }
         }
       });
+
     });
-    pendientesMixtos.forEach((b) => {
-      events.forEach((a, i) => {
-        const dayKey = a.start.toLocaleDateString("sv-SE");
-        if (dayKey === b.start) {
-          const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
-          const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
-          const startMinutes = parseTimeToMinutes(b.tnstart);
-          if (startMinutes >= slotStart && startMinutes < slotEnd) {
-            events[i] = {
-              ...b,
-              tstart: b.tnstart,
-              tend: b.tnend,
-              order: a.order,
-            };
-          }
-        }
-      });
+
+    // Al insertar pendientes en los slots siguientes, respeta la unicidad
+    events.forEach((a, i) => {
+      const dayKey = new Date(a.start).toLocaleDateString('sv-SE');
+
+      // si ya hay un “b” que coincide, reemplaza; si no, ignora
+      const b = pendientesMixtos.find(
+        (x) =>
+          x.start === dayKey &&
+          a.order === x.order && // mismo bloque siguiente
+          // si quieres más estricta: compara también por ficha/code/title
+          true
+      );
+
+      if (b) {
+        events[i] = { ...b, order: a.order };
+      }
+    });
+
     events.sort((a, b) => a.order - b.order);
 
     // events = eventsCalender.value[my.split('-')[1]];
