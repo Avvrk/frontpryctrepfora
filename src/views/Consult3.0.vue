@@ -701,7 +701,23 @@ function generateCalendar() {
         }
       });
     });
-    events.push(...pendientesMixtos);
+    pendientesMixtos.forEach((b) => {
+      events.forEach((a, i) => {
+        const dayKey = a.start.toLocaleDateString("sv-SE");
+        if (dayKey === b.start) {
+          const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
+          const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
+          const startMinutes = parseTimeToMinutes(b.tnstart);
+          if (startMinutes >= slotStart && startMinutes < slotEnd) {
+            events[i] = {
+              ...b,
+              tstart: b.tnstart,
+              tend: b.tnend,
+              order: a.order,
+            };
+          }
+        }
+      });
     events.sort((a, b) => a.order - b.order);
 
     // events = eventsCalender.value[my.split('-')[1]];
