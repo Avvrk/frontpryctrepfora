@@ -751,6 +751,7 @@ function generateCalendar() {
           }
         }
       });
+      });
     events.sort((a, b) => a.order - b.order);
 
     // events = eventsCalender.value[my.split('-')[1]];
