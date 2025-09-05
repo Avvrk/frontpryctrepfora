@@ -1097,7 +1097,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA MAÑANA',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#929292',
+        borderColor: '#fedd07',
         order: 1,
         className: 'jornada-mañana',
       },
@@ -1108,7 +1108,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA TARDE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#929292',
+        borderColor: '#fe9707',
         order: 2,
         className: 'jornada-tarde',
       },
@@ -1119,7 +1119,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA NOCHE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#929292',
+        borderColor: '#6d83c9',
         order: 3,
         className: 'jornada-noche',
       }
@@ -1158,7 +1158,7 @@ function addColors() {
       const [, month] = dateStr.split('-');
 
       legendInstructors.value.forEach((inst) => {
-        const events = inst.events?.[month]?.[dateStr] || [];
+        const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
         const shifts = new Set();
 
         (Array.isArray(events) ? events : [events]).forEach((ev) => {
