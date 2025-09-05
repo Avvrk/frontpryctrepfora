@@ -672,58 +672,37 @@ function generateCalendar() {
     if (shape.value === 'area') {
 
     }
-    const eventoMixto = ref(null);
-    const mixto = ref(0);
+    const pendientesMixtos = [];
 
     events.forEach((a, i) => {
-      if (
-        mixto.value === 1 &&
-        a.start.toLocaleDateString('sv-SE') === eventoMixto.value.start
-      ) {
-        const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
-        const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
-        const startMinutes = parseTimeToMinutes(eventoMixto.value.tnstart);
-
-        if (startMinutes >= slotStart && startMinutes < slotEnd) {
-          events[i] = { ...eventoMixto.value };
-          mixto.value = 0;
-          eventoMixto.value = null;
-        }
-      }
+      const dayKey = a.start.toLocaleDateString('sv-SE');
       calendarMonthEvents.forEach((b) => {
-        if (a.start.toLocaleDateString('sv-SE') === b.start) {
+        if (dayKey === b.start) {
           const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
           const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
 
-          if (b.observation == 'JORNADA MIXTA') {
-            const sameDayMix = calendarMonthEvents.filter(
-              (e) => e.start === b.start && e.observation === 'JORNADA MIXTA'
-            );
-
+          if (b.observation === 'JORNADA MIXTA') {
             const startMinutes = parseTimeToMinutes(b.tstart);
-            // const endMinutes = parseTimeToMinutes(b.tend);
-
             if (startMinutes >= slotStart && startMinutes < slotEnd) {
               events[i] = { ...b, order: a.order };
             }
 
-            if (sameDayMix.length === 1) {
-              mixto.value = 1;
-              const nh = horaSiguiente(b.tstart);
-              eventoMixto.value = {
-                ...b,
-                tnstart: nh.tstart,
-                tnend: nh.tend,
-                order: a.order + 1,
-              };
-            }
+            const nh = horaSiguiente(b.tstart);
+            pendientesMixtos.push({
+              ...b,
+              tnstart: nh.tstart,
+              tnend: nh.tend,
+              order: a.order + 1,
+              start: dayKey,
+            });
           } else if (b.observation == a.observation) {
             events[i] = { ...b, order: a.order };
           }
         }
       });
-      events.sort((a, b) => a.order - b.order);
     });
+    events.push(...pendientesMixtos);
+    events.sort((a, b) => a.order - b.order);
 
     // events = eventsCalender.value[my.split('-')[1]];
 
