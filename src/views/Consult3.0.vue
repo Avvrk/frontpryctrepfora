@@ -1106,9 +1106,32 @@ function generateColor() {
 
 function addColors() {
   nextTick(() => {
+    // remove previous indicators to avoid duplicates when navigating
+    document.querySelectorAll('.inst-dot-container').forEach((el) => el.remove());
+
     document.querySelectorAll('.fc-day').forEach((dayEl) => {
       const dateStr = dayEl.getAttribute('data-date');
-      console.log('Fecha del día:', dateStr);
+      if (!dateStr) return;
+
+      const [, month] = dateStr.split('-');
+      const start = dateStr;
+
+      const container = document.createElement('div');
+      container.className = 'inst-dot-container';
+      dayEl.style.position = 'relative';
+
+      legendInstructors.value.forEach((inst) => {
+        if (inst.events?.[month]?.[start]) {
+          const dot = document.createElement('span');
+          dot.className = 'inst-dot';
+          dot.style.backgroundColor = inst.color;
+          container.appendChild(dot);
+        }
+      });
+
+      if (container.children.length > 0) {
+        dayEl.appendChild(container);
+      }
     });
   });
 }
@@ -1118,6 +1141,22 @@ function addColors() {
 #calender {
   width: 1000px !important;
   height: 665px !important;
+}
+
+.inst-dot-container {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+}
+
+.inst-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 /* Leyenda de horarios */
