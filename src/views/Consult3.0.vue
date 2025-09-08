@@ -932,44 +932,59 @@ function filterInstru(val, update, abort) {
   });
 }
 
+// Filtra los instructores según el área temática seleccionada en el combo
+// y reinicia la selección actual.
 function handleThematicareaChange(selectedArea) {
+  // al cambiar de área se limpia la opción del instructor actual
   inst.value = null;
 
+  // cuando no se selecciona ningún área se limpian las listas
   if (!selectedArea) {
     filterInstructor.value = [];
     copyFilterInst.value = [];
     return;
   }
 
+  // se filtran solo los instructores cuyo campo "area" coincide
   copyFilterInst.value = optionsInst.value.filter(
     (i) =>
       i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase(),
   );
 
+  // el arreglo resultante se usa para mostrar las opciones disponibles
   filterInstructor.value = [...copyFilterInst.value];
 }
 
+// Convierte un texto de hora (ej. "10:30 P.M.") a minutos desde la medianoche.
 function parseTimeToMinutes(timeText) {
   if (!timeText) return NaN;
   const text = timeText.trim();
+
+  // Manejo de formato de 12 horas con indicación A.M./P.M.
   if (/A\.M\.|P\.M\./i.test(text)) {
     const [time, period] = text.split(' ');
     let [h, m] = time.split(':').map(Number);
-    if (/P\.M\./i.test(period) && h !== 12) h += 12;
-    if (/A\.M\./i.test(period) && h === 12) h = 0;
+    if (/P\.M\./i.test(period) && h !== 12) h += 12; // convierte PM a formato 24h
+    if (/A\.M\./i.test(period) && h === 12) h = 0;   // 12 A.M. corresponde a 00h
     return h * 60 + m;
   }
+
+  // Para horas en formato 24h simplemente se calcula
   const [h, m] = text.split(':').map(Number);
   return h * 60 + m;
 }
 
+// Recorre los eventos del calendario y suma las horas trabajadas en cada mes.
 function calculateMonthHours() {
   monthHours.value = {};
   if (!eventsCalender.value || !yearsMonth.value) return;
+
   yearsMonth.value.forEach((my) => {
     const monthKey = my.split('-')[1];
     const events = eventsCalender.value[monthKey] || [];
     let minutes = 0;
+
+    // se calcula la diferencia entre hora inicial y final de cada evento
     events.forEach((ev) => {
       const start = parseTimeToMinutes(ev.tstart);
       const end = parseTimeToMinutes(ev.tend);
@@ -977,12 +992,17 @@ function calculateMonthHours() {
         minutes += end - start;
       }
     });
+
+    // los minutos acumulados se convierten a horas y se guardan por mes
     monthHours.value[my] = minutes / 60;
   });
 }
 
+// Devuelve una paleta de colores según el turno del evento.
 function changeColor(event) {
+  // normaliza el texto para comparar sin acentos ni mayúsculas
   const shiftLower = event.observation.toLowerCase();
+
   if (shiftLower === 'jornada mañana') {
     return {
       backgroundColor: '#fedd07',
@@ -1002,6 +1022,7 @@ function changeColor(event) {
       textColor: '#FFFFFF',
     };
   } else {
+    // por defecto se aplica el color del turno nocturno
     return {
       backgroundColor: '#6d83c9',
       borderColor: '#6d83c9',
@@ -1010,10 +1031,9 @@ function changeColor(event) {
   }
 }
 
-// es para la generacion del calendario, ya que puede que
-// todos los instructores que se pidan no tengan formacion
-// entonces el backend solo votara el error de vacio, el codigo
-// que se uso es como esta en el backend
+// Genera la lista de meses entre dos fechas en formato "aaaa/mm/dd".
+// Se usa para construir la matriz de eventos en el calendario.
+// Está basada en la misma lógica del backend para evitar desfaces.
 function computeMonthsYears(fstartStr, fendStr) {
   const toISO = (s) => (s || '').replace(/\//g, '-'); // "aaaa/mm/dd" -> "aaaa-mm-dd"
   const start = new Date(toISO(fstartStr));
@@ -1022,12 +1042,13 @@ function computeMonthsYears(fstartStr, fendStr) {
   const months = []; // ["06","07","08"]
   const yearsMonth = []; // ["2025-06","2025-07","2025-08"]
 
-  // usamos UTC como en el back (getUTCMonth / getUTCFullYear)
+  // usamos UTC como en el back (getUTCMonth / getUTCFullYear) para evitar TZ
   let cursor = new Date(
     Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
   );
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
 
+  // se avanza mes a mes agregando las representaciones necesarias
   while (cursor <= endUTC) {
     const mm = String(cursor.getUTCMonth() + 1).padStart(2, '0');
     const yyyy = cursor.getUTCFullYear();
@@ -1038,11 +1059,13 @@ function computeMonthsYears(fstartStr, fendStr) {
   return { months, yearsMonth };
 }
 
+// Genera tres eventos diarios (mañana, tarde y noche) para un rango de fechas.
 function generateDailyEvents(startDate, endDate) {
   const events = [];
   const start = new Date(startDate.replace(/\//g, '-'));
   const end = new Date(endDate.replace(/\//g, '-'));
 
+  // recorre cada día dentro del rango
   for (
     let date = new Date(start);
     date <= end;
@@ -1051,6 +1074,7 @@ function generateDailyEvents(startDate, endDate) {
     const baseDate = new Date(date);
     baseDate.setDate(baseDate.getDate() + 1);
 
+    // se crean los tres turnos básicos
     events.push(
       {
         start: new Date(baseDate.setHours(6, 30, 0, 0)),
@@ -1091,6 +1115,7 @@ function generateDailyEvents(startDate, endDate) {
   return events;
 }
 
+// Devuelve un color hexadecimal aleatorio para diferenciar eventos.
 function generateColor() {
   const letter = '0123456789ABCDEF';
   let color = '#';
