@@ -607,54 +607,6 @@ async function sendReport() {
   isLoading.value = false;
 }
 
-function parseTimeToMinutes(timeText) {
-  if (!timeText) return NaN;
-  const text = timeText.trim();
-  if (/A\.M\.|P\.M\./i.test(text)) {
-    const [time, period] = text.split(' ');
-    let [h, m] = time.split(':').map(Number);
-    if (/P\.M\./i.test(period) && h !== 12) h += 12;
-    if (/A\.M\./i.test(period) && h === 12) h = 0;
-    return h * 60 + m;
-  }
-  const [h, m] = text.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function calculateMonthHours() {
-  monthHours.value = {};
-  if (!eventsCalender.value || !yearsMonth.value) return;
-  yearsMonth.value.forEach((my) => {
-    const monthKey = my.split('-')[1];
-    const events = eventsCalender.value[monthKey] || [];
-    let minutes = 0;
-    events.forEach((ev) => {
-      const start = parseTimeToMinutes(ev.tstart);
-      const end = parseTimeToMinutes(ev.tend);
-      if (!isNaN(start) && !isNaN(end) && end > start) {
-        minutes += end - start;
-      }
-    });
-    monthHours.value[my] = minutes / 60;
-  });
-}
-
-function horaSiguiente(text) {
-  const inicMañana = 390;
-  const finMañana = 749;
-  const inicTarde = 750;
-  const finTarde = 1109;
-  // const inicNoche = 1110;
-  // const finNoche = 1410;
-  const nhora = parseTimeToMinutes(text);
-
-  if (nhora >= inicMañana && nhora <= finMañana) {
-    return { tstart: '12:30 P.M.', tend: '6:29 P.M.' };
-  } else if (nhora >= inicTarde && nhora <= finTarde) {
-    return { tstart: '6:30 P.M.', tend: '11:30 P.M.' };
-  }
-}
-
 function generateCalendar() {
   yearsMonth.value.forEach((my) => {
     let events = null;
@@ -678,8 +630,8 @@ function generateCalendar() {
       endRange.toISOString().split('T')[0]
     );
 
-    const pendientesMixtos = [];
-    const pendientesKeys = new Set(); // 🔐 aquí guardamos las llaves únicas
+    const pendingMixtos = [];
+    const pendingKeys = new Set(); // 🔐 aquí guardamos las llaves únicas
 
     events.forEach((a, i) => {
       const dayKey = a.start.toLocaleDateString('sv-SE');
@@ -703,13 +655,9 @@ function generateCalendar() {
               };
             }
 
-            const nh = horaSiguiente(b.tstart);
-
             // ✅ usa tstart/tend y crea llave única
             const mixtoItem = {
               ...b,
-/*               nhstart: nh.tstart,
-              nhend: nh.tend, */
               order: a.order + 1,
               start: dayKey,
               mixPart: 2,
@@ -724,9 +672,9 @@ function generateCalendar() {
               b.fiche ?? b.code ?? b.title ?? '', // identifica “qué” evento es
             ].join('|');
 
-            if (!pendientesKeys.has(k)) {
-              pendientesMixtos.push(mixtoItem);
-              pendientesKeys.add(k);
+            if (!pendingKeys.has(k)) {
+              pendingMixtos.push(mixtoItem);
+              pendingKeys.add(k);
             }
           } else if (b.observation == a.observation) {
             events[i] = { ...b, order: a.order };
@@ -740,7 +688,7 @@ function generateCalendar() {
       const dayKey = new Date(a.start).toLocaleDateString('sv-SE');
 
       // si ya hay un “b” que coincide, reemplaza; si no, ignora
-      const b = pendientesMixtos.find(
+      const b = pendingMixtos.find(
         (x) =>
           x.start === dayKey &&
           a.order === x.order && // mismo bloque siguiente
@@ -835,34 +783,6 @@ async function getEnvironments() {
     optionsEnvir.value.push({ label: row.name, value: row._id });
     filterEnvironment.value = optionsEnvir.value;
   });
-}
-
-// es para la generacion del calendario, ya que puede que
-// todos los instructores que se pidan no tengan formacion
-// entonces el backend solo votara el error de vacio, el codigo
-// que se uso es como esta en el backend
-function computeMonthsYears(fstartStr, fendStr) {
-  const toISO = (s) => (s || '').replace(/\//g, '-'); // "aaaa/mm/dd" -> "aaaa-mm-dd"
-  const start = new Date(toISO(fstartStr));
-  const end = new Date(toISO(fendStr));
-
-  const months = []; // ["06","07","08"]
-  const yearsMonth = []; // ["2025-06","2025-07","2025-08"]
-
-  // usamos UTC como en el back (getUTCMonth / getUTCFullYear)
-  let cursor = new Date(
-    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
-  );
-  const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
-
-  while (cursor <= endUTC) {
-    const mm = String(cursor.getUTCMonth() + 1).padStart(2, '0');
-    const yyyy = cursor.getUTCFullYear();
-    months.push(mm);
-    yearsMonth.push(`${yyyy}-${mm}`);
-    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
-  }
-  return { months, yearsMonth };
 }
 
 async function getReport() {
@@ -1002,31 +922,11 @@ function filterKnowledge(val, update, abort) {
   });
 }
 
-function filterFicha(val, update, abort) {
-  update(() => {
-    const needle = val.toLocaleLowerCase();
-
-    filterFiche.value = optionsFiches.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
-    );
-  });
-}
-
 function filterInstru(val, update, abort) {
   update(() => {
     const needle = val.toLocaleLowerCase();
 
     filterInstructor.value = copyFilterInst.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
-    );
-  });
-}
-
-function filterEnvi(val, update, abort) {
-  update(() => {
-    const needle = val.toLocaleLowerCase();
-
-    filterEnvironment.value = optionsEnvir.value.filter(
       (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
     );
   });
@@ -1047,6 +947,38 @@ function handleThematicareaChange(selectedArea) {
   );
 
   filterInstructor.value = [...copyFilterInst.value];
+}
+
+function parseTimeToMinutes(timeText) {
+  if (!timeText) return NaN;
+  const text = timeText.trim();
+  if (/A\.M\.|P\.M\./i.test(text)) {
+    const [time, period] = text.split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (/P\.M\./i.test(period) && h !== 12) h += 12;
+    if (/A\.M\./i.test(period) && h === 12) h = 0;
+    return h * 60 + m;
+  }
+  const [h, m] = text.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function calculateMonthHours() {
+  monthHours.value = {};
+  if (!eventsCalender.value || !yearsMonth.value) return;
+  yearsMonth.value.forEach((my) => {
+    const monthKey = my.split('-')[1];
+    const events = eventsCalender.value[monthKey] || [];
+    let minutes = 0;
+    events.forEach((ev) => {
+      const start = parseTimeToMinutes(ev.tstart);
+      const end = parseTimeToMinutes(ev.tend);
+      if (!isNaN(start) && !isNaN(end) && end > start) {
+        minutes += end - start;
+      }
+    });
+    monthHours.value[my] = minutes / 60;
+  });
 }
 
 function changeColor(event) {
@@ -1076,6 +1008,34 @@ function changeColor(event) {
       textColor: '#FFFFFF',
     };
   }
+}
+
+// es para la generacion del calendario, ya que puede que
+// todos los instructores que se pidan no tengan formacion
+// entonces el backend solo votara el error de vacio, el codigo
+// que se uso es como esta en el backend
+function computeMonthsYears(fstartStr, fendStr) {
+  const toISO = (s) => (s || '').replace(/\//g, '-'); // "aaaa/mm/dd" -> "aaaa-mm-dd"
+  const start = new Date(toISO(fstartStr));
+  const end = new Date(toISO(fendStr));
+
+  const months = []; // ["06","07","08"]
+  const yearsMonth = []; // ["2025-06","2025-07","2025-08"]
+
+  // usamos UTC como en el back (getUTCMonth / getUTCFullYear)
+  let cursor = new Date(
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
+  );
+  const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
+
+  while (cursor <= endUTC) {
+    const mm = String(cursor.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = cursor.getUTCFullYear();
+    months.push(mm);
+    yearsMonth.push(`${yyyy}-${mm}`);
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return { months, yearsMonth };
 }
 
 function generateDailyEvents(startDate, endDate) {
@@ -1138,15 +1098,6 @@ function generateColor() {
     color += letter[Math.floor(Math.random() * 16)];
   }
   return color;
-}
-
-function addColors() {
-  nextTick(() => {
-    document.querySelectorAll('.fc-day').forEach((dayEl) => {
-      const dateStr = dayEl.getAttribute('data-date');
-      console.log('Fecha del día:', dateStr);
-    });
-  });
 }
 </script>
 
