@@ -708,8 +708,8 @@ function generateCalendar() {
             // ✅ usa tstart/tend y crea llave única
             const mixtoItem = {
               ...b,
-              tstart: nh.tstart,
-              tend: nh.tend,
+/*               nhstart: nh.tstart,
+              nhend: nh.tend, */
               order: a.order + 1,
               start: dayKey,
               mixPart: 2,
