@@ -474,11 +474,6 @@ import { useRouter } from 'vue-router';
 import dataRedConocimiento from '../static/dataRedConocimiento.js';
 
 import FullCalendar from '@fullcalendar/vue3';
-import {
-  generateMonthEvents,
-  parseTimeToMinutes,
-} from '../utils/calendarEvents.js';
-import { changeColor } from '../utils/eventColors.js';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -663,6 +658,9 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
+      datesSet: function () {
+        addColors();
+      },
     });
   });
 
@@ -872,7 +870,7 @@ function handleThematicareaChange(selectedArea) {
   filterInstructor.value = [...copyFilterInst.value];
 }
 
-/* // Convierte un texto de hora (ej. "10:30 P.M.") a minutos desde la medianoche.
+// Convierte un texto de hora (ej. "10:30 P.M.") a minutos desde la medianoche.
 function parseTimeToMinutes(timeText) {
   if (!timeText) return NaN;
   const text = timeText.trim();
@@ -889,7 +887,7 @@ function parseTimeToMinutes(timeText) {
   // Para horas en formato 24h simplemente se calcula
   const [h, m] = text.split(':').map(Number);
   return h * 60 + m;
-} */
+}
 
 // Recorre los eventos del calendario y suma las horas trabajadas en cada mes.
 function calculateMonthHours() {
@@ -915,7 +913,7 @@ function calculateMonthHours() {
   });
 }
 
-/* // Devuelve una paleta de colores según el turno del evento.
+// Devuelve una paleta de colores según el turno del evento.
 function changeColor(event) {
   // normaliza el texto para comparar sin acentos ni mayúsculas
   const shiftLower = event.observation.toLowerCase();
@@ -946,7 +944,7 @@ function changeColor(event) {
       textColor: '#FFFFFF',
     };
   }
-} */
+}
 
 // Genera la lista de meses entre dos fechas en formato "aaaa/mm/dd".
 // Se usa para construir la matriz de eventos en el calendario.
@@ -976,7 +974,7 @@ function computeMonthsYears(fstartStr, fendStr) {
   return { months, yearsMonth };
 }
 
-/* // Genera tres eventos diarios (mañana, tarde y noche) para un rango de fechas.
+// Genera tres eventos diarios (mañana, tarde y noche) para un rango de fechas.
 function generateDailyEvents(startDate, endDate) {
   const events = [];
   const start = new Date(startDate.replace(/\//g, '-'));
@@ -1030,7 +1028,7 @@ function generateDailyEvents(startDate, endDate) {
   }
 
   return events;
-} */
+}
 
 // Devuelve un color hexadecimal aleatorio para diferenciar eventos.
 function generateColor() {
@@ -1040,6 +1038,83 @@ function generateColor() {
     color += letter[Math.floor(Math.random() * 16)];
   }
   return color;
+}
+
+export function generateMonthEvents(monthYear, eventsCalender, fStart, fEnd) {
+  const [year, month] = monthYear.split('-');
+  const calendarMonthEvents = eventsCalender?.[month] || [];
+  const monthStart = new Date(`${year}-${month}-01`);
+  const monthEnd = new Date(year, month, 0);
+  const globalStart = new Date(fStart.replace(/\//g, '-'));
+  const globalEnd = new Date(fEnd.replace(/\//g, '-'));
+
+  const startRange = monthStart > globalStart ? monthStart : globalStart;
+  const endRange = monthEnd < globalEnd ? monthEnd : globalEnd;
+
+  let events = generateDailyEvents(
+    startRange.toISOString().split('T')[0],
+    endRange.toISOString().split('T')[0]
+  );
+
+  const pendingMixtos = [];
+  const pendingKeys = new Set();
+
+  events.forEach((a, i) => {
+    const dayKey = a.start.toLocaleDateString('sv-SE');
+
+    calendarMonthEvents.forEach((b) => {
+      if (dayKey === b.start) {
+        const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
+        const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
+
+        if (b.observation === 'JORNADA MIXTA') {
+          const startMinutes = parseTimeToMinutes(b.tstart);
+          const mixType = startMinutes < 750 ? 'morning-afternoon' : 'afternoon-night';
+
+          if (startMinutes >= slotStart && startMinutes < slotEnd) {
+            events[i] = { ...b, order: a.order, mixPart: 1, mixType };
+          }
+
+          const mixtoItem = {
+            ...b,
+            order: a.order + 1,
+            start: dayKey,
+            mixPart: 2,
+            mixType,
+          };
+
+          const k = [
+            mixtoItem.start,
+            mixtoItem.tstart,
+            mixtoItem.tend,
+            b.fiche ?? b.code ?? b.title ?? '',
+          ].join('|');
+
+          if (!pendingKeys.has(k)) {
+            pendingMixtos.push(mixtoItem);
+            pendingKeys.add(k);
+          }
+        } else if (b.observation == a.observation) {
+          events[i] = { ...b, order: a.order };
+        }
+      }
+    });
+  });
+
+  events.forEach((a, i) => {
+    const dayKey = new Date(a.start).toLocaleDateString('sv-SE');
+
+    const b = pendingMixtos.find(
+      (x) => x.start === dayKey && a.order === x.order
+    );
+
+    if (b) {
+      events[i] = { ...b, order: a.order };
+    }
+  });
+
+  events.sort((a, b) => a.order - b.order);
+  return events;
 }
 </script>
 
