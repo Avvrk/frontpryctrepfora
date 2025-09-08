@@ -298,6 +298,15 @@
             {{ shiftRanges.night }}
           </q-tooltip>
         </div>
+
+        <!-- MIXTA -->
+         <div class="legend-item mixta">
+          <span class="legend-color" aria-label="Noche"></span>
+          <span class="legend-text">Mixta</span>
+<!--           <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
+            {{ shiftRanges.mixta }}
+          </q-tooltip> -->
+         </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
         <div class="row justify-center hoursmonth" v-if="existInfo">
@@ -1055,23 +1064,10 @@ function changeColor(event) {
       textColor: '#FFFFFF',
     };
   } else if (shiftLower === 'jornada mixta') {
-    const className = ['jornadaMixta'];
-    if (event.mixType === 'morning-afternoon') {
-      className.push(
-        event.mixPart === 1
-        ? 'mix-morning-afternoon-first'
-        : 'mix-morning-afternoon-second',
-      );
-    } else if (event.mixType === "afternoon-night") {
-      className.push(
-        event.mixPart === 1
-          ? "mix-afternoon-night-first"
-          : "mix-afternoon-night-second",
-      );
-    }
     return {
-      className,
-      textColor: "#FFFFFF",
+      backgroundColor: '#ff829b',
+      borderColor: '#ff829b',
+      textColor: '#FFFFFF',
     };
   } else {
     return {
@@ -1194,6 +1190,10 @@ function addColors() {
   background-color: #6d83c9;
 }
 
+.legend-item.mixta .legend-color {
+  background-color: #ff829b;
+}
+
 .hoursmonth {
   position: absolute;
   left: 50%;
@@ -1217,36 +1217,9 @@ function addColors() {
   background-origin: border-box;
   background-clip: padding-box, border-box !important;
   overflow: hidden; /* respeta el radius con fondos múltiples */
-}
-
-/* Mañana → Tarde (primera parte) */
-.jornadaMixta.mix-morning-afternoon-first {
   background:
-    /* relleno */
-    linear-gradient(to right, #fedd07 0%, #fedd07 82%, #fe9707 100%) padding-box,
-    /* borde */
-    linear-gradient(to right, #fedd07, #fe9707) border-box !important;
-}
-
-/* Mañana → Tarde (segunda parte) */
-.jornadaMixta.mix-morning-afternoon-second {
-  background:
-    linear-gradient(to right, #fedd07 0%, #fe9707 18%, #fe9707 100%) padding-box,
-    linear-gradient(to right, #fedd07, #fe9707) border-box !important;
-}
-
-/* Tarde → Noche (primera parte) */
-.jornadaMixta.mix-afternoon-night-first {
-  background:
-    linear-gradient(to right, #fe9707 0%, #fe9707 82%, #6d83c9 100%) padding-box,
-    linear-gradient(to right, #fe9707, #6d83c9) border-box !important;
-}
-
-/* Tarde → Noche (segunda parte) */
-.jornadaMixta.mix-afternoon-night-second {
-  background:
-    linear-gradient(to right, #fe9707 0%, #6d83c9 18%, #6d83c9 100%) padding-box,
-    linear-gradient(to right, #fe9707, #6d83c9) border-box !important;
+    linear-gradient(to right, #fedd07, #6d83c9) padding-box,
+    linear-gradient(to right, #fedd07, #6d83c9) border-box !important;
 }
 
 .to {
