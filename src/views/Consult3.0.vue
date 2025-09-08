@@ -474,6 +474,11 @@ import { useRouter } from 'vue-router';
 import dataRedConocimiento from '../static/dataRedConocimiento.js';
 
 import FullCalendar from '@fullcalendar/vue3';
+import {
+  generateMonthEvents,
+  parseTimeToMinutes,
+} from '../utils/calendarEvents.js';
+import { changeColor } from '../utils/eventColors.js';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -612,96 +617,12 @@ function generateCalendar() {
     let events = null;
     let data = null;
 
-    // if (shape.value === 'area') {
-    //   events = eventsCalender.value[my.split('-')[1]];
-    // } else {
-    const [year, month] = my.split('-');
-    const calendarMonthEvents = eventsCalender.value?.[month] || [];
-    const monthStart = new Date(`${year}-${month}-01`);
-    const monthEnd = new Date(year, month, 0);
-    const globalStart = new Date(fStart.value.replace(/\//g, '-'));
-    const globalEnd = new Date(fEnd.value.replace(/\//g, '-'));
-
-    const startRange = monthStart > globalStart ? monthStart : globalStart;
-    const endRange = monthEnd < globalEnd ? monthEnd : globalEnd;
-
-    events = generateDailyEvents(
-      startRange.toISOString().split('T')[0],
-      endRange.toISOString().split('T')[0]
+    events = generateMonthEvents(
+      my,
+      eventsCalender.value,
+      fStart.value,
+      fEnd.value
     );
-
-    const pendingMixtos = [];
-    const pendingKeys = new Set(); // 🔐 aquí guardamos las llaves únicas
-
-    events.forEach((a, i) => {
-      const dayKey = a.start.toLocaleDateString('sv-SE');
-
-      calendarMonthEvents.forEach((b) => {
-        if (dayKey === b.start) {
-          const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
-          const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
-
-          if (b.observation === 'JORNADA MIXTA') {
-            const startMinutes = parseTimeToMinutes(b.tstart);
-            const mixType =
-              startMinutes < 750 ? 'morning-afternoon' : 'afternoon-night';
-
-            if (startMinutes >= slotStart && startMinutes < slotEnd) {
-              events[i] = { 
-                ...b, 
-                order: a.order, 
-                mixPart: 1, 
-                mixType 
-              };
-            }
-
-            // ✅ usa tstart/tend y crea llave única
-            const mixtoItem = {
-              ...b,
-              order: a.order + 1,
-              start: dayKey,
-              mixPart: 2,
-              mixType,
-            };
-
-            // Construye una llave con los campos que definen unicidad
-            const k = [
-              mixtoItem.start, // día
-              mixtoItem.tstart,
-              mixtoItem.tend, // rango hora
-              b.fiche ?? b.code ?? b.title ?? '', // identifica “qué” evento es
-            ].join('|');
-
-            if (!pendingKeys.has(k)) {
-              pendingMixtos.push(mixtoItem);
-              pendingKeys.add(k);
-            }
-          } else if (b.observation == a.observation) {
-            events[i] = { ...b, order: a.order };
-          }
-        }
-      });
-    });
-
-    // Al insertar pendientes en los slots siguientes, respeta la unicidad
-    events.forEach((a, i) => {
-      const dayKey = new Date(a.start).toLocaleDateString('sv-SE');
-
-      // si ya hay un “b” que coincide, reemplaza; si no, ignora
-      const b = pendingMixtos.find(
-        (x) =>
-          x.start === dayKey &&
-          a.order === x.order && // mismo bloque siguiente
-          // si quieres más estricta: compara también por ficha/code/title
-          true
-      );
-
-      if (b) {
-        events[i] = { ...b, order: a.order };
-      }
-    });
-
-    events.sort((a, b) => a.order - b.order);
 
     // events = eventsCalender.value[my.split('-')[1]];
 
@@ -742,9 +663,6 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
-      datesSet: function () {
-        addColors();
-      },
     });
   });
 
@@ -823,7 +741,6 @@ async function getReport() {
         prof.events = [];
       }
     }
-    console.log(legendInstructors.value);
     generateCalendar();
   } else {
     let data = {
@@ -955,7 +872,7 @@ function handleThematicareaChange(selectedArea) {
   filterInstructor.value = [...copyFilterInst.value];
 }
 
-// Convierte un texto de hora (ej. "10:30 P.M.") a minutos desde la medianoche.
+/* // Convierte un texto de hora (ej. "10:30 P.M.") a minutos desde la medianoche.
 function parseTimeToMinutes(timeText) {
   if (!timeText) return NaN;
   const text = timeText.trim();
@@ -972,7 +889,7 @@ function parseTimeToMinutes(timeText) {
   // Para horas en formato 24h simplemente se calcula
   const [h, m] = text.split(':').map(Number);
   return h * 60 + m;
-}
+} */
 
 // Recorre los eventos del calendario y suma las horas trabajadas en cada mes.
 function calculateMonthHours() {
@@ -998,7 +915,7 @@ function calculateMonthHours() {
   });
 }
 
-// Devuelve una paleta de colores según el turno del evento.
+/* // Devuelve una paleta de colores según el turno del evento.
 function changeColor(event) {
   // normaliza el texto para comparar sin acentos ni mayúsculas
   const shiftLower = event.observation.toLowerCase();
@@ -1029,7 +946,7 @@ function changeColor(event) {
       textColor: '#FFFFFF',
     };
   }
-}
+} */
 
 // Genera la lista de meses entre dos fechas en formato "aaaa/mm/dd".
 // Se usa para construir la matriz de eventos en el calendario.
@@ -1059,7 +976,7 @@ function computeMonthsYears(fstartStr, fendStr) {
   return { months, yearsMonth };
 }
 
-// Genera tres eventos diarios (mañana, tarde y noche) para un rango de fechas.
+/* // Genera tres eventos diarios (mañana, tarde y noche) para un rango de fechas.
 function generateDailyEvents(startDate, endDate) {
   const events = [];
   const start = new Date(startDate.replace(/\//g, '-'));
@@ -1113,7 +1030,7 @@ function generateDailyEvents(startDate, endDate) {
   }
 
   return events;
-}
+} */
 
 // Devuelve un color hexadecimal aleatorio para diferenciar eventos.
 function generateColor() {
