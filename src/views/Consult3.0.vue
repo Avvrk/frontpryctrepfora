@@ -669,9 +669,6 @@ function generateCalendar() {
       endRange.toISOString().split('T')[0]
     );
 
-    if (shape.value === 'area') {
-
-    }
     const pendientesMixtos = [];
     const pendientesKeys = new Set(); // 🔐 aquí guardamos las llaves únicas
 
@@ -685,9 +682,16 @@ function generateCalendar() {
 
           if (b.observation === 'JORNADA MIXTA') {
             const startMinutes = parseTimeToMinutes(b.tstart);
+            const mixType =
+              startMinutes < 750 ? 'morning-afternoon' : 'afternoon-night';
 
             if (startMinutes >= slotStart && startMinutes < slotEnd) {
-              events[i] = { ...b, order: a.order };
+              events[i] = { 
+                ...b, 
+                order: a.order, 
+                mixPart: 1, 
+                mixType 
+              };
             }
 
             const nh = horaSiguiente(b.tstart);
@@ -699,26 +703,27 @@ function generateCalendar() {
               tend: nh.tend,
               order: a.order + 1,
               start: dayKey,
+              mixPart: 2,
+              mixType,
             };
 
             // Construye una llave con los campos que definen unicidad
             const k = [
-              mixtoItem.start,                // día
-              mixtoItem.tstart, mixtoItem.tend, // rango hora
-              b.fiche ?? b.code ?? b.title ?? '' // identifica “qué” evento es
+              mixtoItem.start, // día
+              mixtoItem.tstart,
+              mixtoItem.tend, // rango hora
+              b.fiche ?? b.code ?? b.title ?? '', // identifica “qué” evento es
             ].join('|');
 
             if (!pendientesKeys.has(k)) {
               pendientesMixtos.push(mixtoItem);
               pendientesKeys.add(k);
             }
-
           } else if (b.observation == a.observation) {
             events[i] = { ...b, order: a.order };
           }
         }
       });
-
     });
 
     // Al insertar pendientes en los slots siguientes, respeta la unicidad
@@ -745,7 +750,7 @@ function generateCalendar() {
 
     events.forEach((element) => {
       if (element.code) {
-        data = changeColor(element.observation);
+        data = changeColor(element);
         if (!data.className) {
           element.backgroundColor = data.backgroundColor;
           element.borderColor = data.borderColor;
@@ -837,7 +842,7 @@ function computeMonthsYears(fstartStr, fendStr) {
 
   // usamos UTC como en el back (getUTCMonth / getUTCFullYear)
   let cursor = new Date(
-    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1)
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
   );
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
 
@@ -865,7 +870,7 @@ async function getReport() {
 
     const { months: mm, yearsMonth: yymm } = computeMonthsYears(
       fStart.value,
-      fEnd.value
+      fEnd.value,
     );
     months.value = mm;
     yearsMonth.value = yymm;
@@ -993,7 +998,7 @@ function filterFicha(val, update, abort) {
     const needle = val.toLocaleLowerCase();
 
     filterFiche.value = optionsFiches.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
+      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
     );
   });
 }
@@ -1003,7 +1008,7 @@ function filterInstru(val, update, abort) {
     const needle = val.toLocaleLowerCase();
 
     filterInstructor.value = copyFilterInst.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
+      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
     );
   });
 }
@@ -1013,7 +1018,7 @@ function filterEnvi(val, update, abort) {
     const needle = val.toLocaleLowerCase();
 
     filterEnvironment.value = optionsEnvir.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
+      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
     );
   });
 }
@@ -1029,14 +1034,14 @@ function handleThematicareaChange(selectedArea) {
 
   copyFilterInst.value = optionsInst.value.filter(
     (i) =>
-      i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase()
+      i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase(),
   );
 
   filterInstructor.value = [...copyFilterInst.value];
 }
 
-function changeColor(shift) {
-  const shiftLower = shift.toLowerCase();
+function changeColor(event) {
+  const shiftLower = event.observation.toLowerCase();
   if (shiftLower === 'jornada mañana') {
     return {
       backgroundColor: '#fedd07',
@@ -1050,9 +1055,23 @@ function changeColor(shift) {
       textColor: '#FFFFFF',
     };
   } else if (shiftLower === 'jornada mixta') {
+    const className = ['jornadaMixta'];
+    if (event.mixType === 'morning-afternoon') {
+      className.push(
+        event.mixPart === 1
+        ? 'mix-morning-afternoon-first'
+        : 'mix-morning-afternoon-second',
+      );
+    } else if (event.mixType === "afternoon-night") {
+      className.push(
+        event.mixPart === 1
+          ? "mix-afternoon-night-first"
+          : "mix-afternoon-night-second",
+      );
+    }
     return {
-      className: 'jornadaMixta',
-      textColor: '#FFFFFF',
+      className,
+      textColor: "#FFFFFF",
     };
   } else {
     return {
@@ -1192,9 +1211,42 @@ function addColors() {
 }
 
 .jornadaMixta {
-  background: linear-gradient(to right, #fedd07 0%, #fe9707 40%, #6d83c9 100%);
-  /* color: white !important; */
-  border: 1px solid transparent !important;
+  border-radius: 3px;
+  border: 1px solid transparent !important; /* fuerza ancho/estilo del borde */
+  border-image: none !important;            /* neutraliza intentos previos */
+  background-origin: border-box;
+  background-clip: padding-box, border-box !important;
+  overflow: hidden; /* respeta el radius con fondos múltiples */
+}
+
+/* Mañana → Tarde (primera parte) */
+.jornadaMixta.mix-morning-afternoon-first {
+  background:
+    /* relleno */
+    linear-gradient(to right, #fedd07 0%, #fedd07 82%, #fe9707 100%) padding-box,
+    /* borde */
+    linear-gradient(to right, #fedd07, #fe9707) border-box !important;
+}
+
+/* Mañana → Tarde (segunda parte) */
+.jornadaMixta.mix-morning-afternoon-second {
+  background:
+    linear-gradient(to right, #fedd07 0%, #fe9707 18%, #fe9707 100%) padding-box,
+    linear-gradient(to right, #fedd07, #fe9707) border-box !important;
+}
+
+/* Tarde → Noche (primera parte) */
+.jornadaMixta.mix-afternoon-night-first {
+  background:
+    linear-gradient(to right, #fe9707 0%, #fe9707 82%, #6d83c9 100%) padding-box,
+    linear-gradient(to right, #fe9707, #6d83c9) border-box !important;
+}
+
+/* Tarde → Noche (segunda parte) */
+.jornadaMixta.mix-afternoon-night-second {
+  background:
+    linear-gradient(to right, #fe9707 0%, #6d83c9 18%, #6d83c9 100%) padding-box,
+    linear-gradient(to right, #fe9707, #6d83c9) border-box !important;
 }
 
 .to {
