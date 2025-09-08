@@ -1040,25 +1040,32 @@ function generateColor() {
   return color;
 }
 
-export function generateMonthEvents(monthYear, eventsCalender, fStart, fEnd) {
-  const [year, month] = monthYear.split('-');
-  const calendarMonthEvents = eventsCalender?.[month] || [];
+// Genera todos los eventos de un mes fusionando los turnos base con los
+// registros reales obtenidos del backend.
+function generateMonthEvents(my) {
+  // separa el identificador "aaaa-mm" para ubicar el mes en los datos
+  const [year, month] = my.split('-');
+  const calendarMonthEvents = eventsCalender.value?.[month] || [];
+
+  // límites del mes y del rango global solicitado por el usuario
   const monthStart = new Date(`${year}-${month}-01`);
   const monthEnd = new Date(year, month, 0);
-  const globalStart = new Date(fStart.replace(/\//g, '-'));
-  const globalEnd = new Date(fEnd.replace(/\//g, '-'));
+  const globalStart = new Date(fStart.value.replace(/\//g, '-'));
+  const globalEnd = new Date(fEnd.value.replace(/\//g, '-'));
 
   const startRange = monthStart > globalStart ? monthStart : globalStart;
   const endRange = monthEnd < globalEnd ? monthEnd : globalEnd;
 
+  // crea los tres turnos por día dentro del rango efectivo
   let events = generateDailyEvents(
     startRange.toISOString().split('T')[0],
     endRange.toISOString().split('T')[0]
   );
 
   const pendingMixtos = [];
-  const pendingKeys = new Set();
+  const pendingKeys = new Set(); // almacena llaves únicas para jornadas mixtas
 
+  // mezcla los eventos reales con los slots del calendario
   events.forEach((a, i) => {
     const dayKey = a.start.toLocaleDateString('sv-SE');
 
@@ -1069,12 +1076,20 @@ export function generateMonthEvents(monthYear, eventsCalender, fStart, fEnd) {
 
         if (b.observation === 'JORNADA MIXTA') {
           const startMinutes = parseTimeToMinutes(b.tstart);
-          const mixType = startMinutes < 750 ? 'morning-afternoon' : 'afternoon-night';
+          const mixType =
+            startMinutes < 750 ? 'morning-afternoon' : 'afternoon-night';
 
+          // primera mitad de la jornada mixta
           if (startMinutes >= slotStart && startMinutes < slotEnd) {
-            events[i] = { ...b, order: a.order, mixPart: 1, mixType };
+            events[i] = {
+              ...b,
+              order: a.order,
+              mixPart: 1,
+              mixType,
+            };
           }
 
+          // prepara la segunda mitad para el siguiente bloque
           const mixtoItem = {
             ...b,
             order: a.order + 1,
@@ -1083,6 +1098,7 @@ export function generateMonthEvents(monthYear, eventsCalender, fStart, fEnd) {
             mixType,
           };
 
+          // genera llave única para evitar duplicados
           const k = [
             mixtoItem.start,
             mixtoItem.tstart,
@@ -1101,6 +1117,7 @@ export function generateMonthEvents(monthYear, eventsCalender, fStart, fEnd) {
     });
   });
 
+  // inserta las segundas mitades de jornadas mixtas en los slots siguientes
   events.forEach((a, i) => {
     const dayKey = new Date(a.start).toLocaleDateString('sv-SE');
 
@@ -1113,7 +1130,24 @@ export function generateMonthEvents(monthYear, eventsCalender, fStart, fEnd) {
     }
   });
 
+  // ordena cronológicamente para que FullCalendar respete la secuencia
   events.sort((a, b) => a.order - b.order);
+
+  // aplica colores según el tipo de jornada
+  events.forEach((element) => {
+    if (element.code) {
+      const data = changeColor(element);
+      if (!data.className) {
+        element.backgroundColor = data.backgroundColor;
+        element.borderColor = data.borderColor;
+        element.textColor = data.textColor;
+      } else {
+        element.classNames = data.className;
+        element.textColor = data.textColor;
+      }
+    }
+  });
+
   return events;
 }
 </script>
