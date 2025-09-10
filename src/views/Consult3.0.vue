@@ -1178,6 +1178,7 @@ function addColors() {
               container = document.createElement('div');
               container.className = 'inst-dot-container';
               target.style.position = 'relative';
+              target.style.overflow = 'visible';
               target.appendChild(container);
             }
 
@@ -1232,6 +1233,7 @@ function addColors() {
   height: 14px;
   border-radius: 50%;
   display: inline-block;
+  position: relative;
 }
 
 /* Leyenda de horarios */
