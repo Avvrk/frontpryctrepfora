@@ -144,7 +144,7 @@
   visibility: hidden;
   opacity: 0;
   transition: 0.2s;
-  z-index: 1;
+  z-index: 1000;
   border: 2px solid var(--color_box);
 }
 
@@ -165,12 +165,23 @@
 .tooltip-area:hover .content-tooltip-area {
   visibility: visible;
   opacity: 1;
-  z-index: 1;
+  z-index: 1000;
 }
 
 .fc-daygrid-event {
   overflow: visible;
 }
+
+.fc-daygrid-day,
+.fc-daygrid-day-frame {
+  overflow: visible;
+}
+
+.inst-dot {
+  position: relative;
+  pointer-events: auto;
+}
+
 .customEvents {
   white-space: nowrap;
   text-overflow: ellipsis !important;
