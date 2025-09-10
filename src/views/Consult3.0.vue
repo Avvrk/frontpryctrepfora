@@ -481,7 +481,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, computed, nextTick } from 'vue';
+import { ref, onBeforeMount, computed, createApp } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -498,6 +498,7 @@ import esLocale from '@fullcalendar/core/locales/es';
 
 import { storeUser } from '../store/users.js';
 import { storeEnv } from '../store/Environments.js';
+import { VTooltip } from 'floating-vue';
 import tableFormacion from '../components/Reports/tables/tableFormacion.vue';
 import tableOtrasActividades from '../components/Reports/tables/tableOtrasActividades.vue';
 import { excelToReports } from '../services/excelToReports.js';
@@ -793,9 +794,7 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
-      datesSet: function () {
-        addColors();
-      },
+      eventDidMount: addColors,
     });
   });
 
@@ -1149,68 +1148,63 @@ function shiftClassByTime(time) {
   return null;
 }
 
-function addColors() {
-  nextTick(() => {
-    // eliminar indicadores anteriores para evitar duplicados al navegar
-    document.querySelectorAll('.inst-dot-container').forEach((el) => el.remove());
+function addColors(info) {
+  if (shape.value !== 'area') return;
 
-    document.querySelectorAll('.fc-daygrid-day').forEach((dayEl) => {
-      const dateStr = dayEl.getAttribute('data-date');
-      if (!dateStr) return;
+  const dateStr = info.event.startStr;
+  if (!dateStr) return;
+  const [, month] = dateStr.split('-');
+  const cls = info.event.classNames?.[0];
+  if (!cls) return;
 
-      const [, month] = dateStr.split('-');
+  legendInstructors.value.forEach((inst) => {
+    const events = (inst.events?.[month] || []).filter(
+      (ev) => ev.start === dateStr
+    );
+    const shiftEvents = events.filter(
+      (ev) => shiftClassByTime(ev.tstart) === cls
+    );
 
-      legendInstructors.value.forEach((inst) => {
-          const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
-          const shifts = new Set();
+    if (!shiftEvents.length) return;
 
-          (Array.isArray(events) ? events : [events]).forEach((ev) => {
-            const cls = shiftClassByTime(ev.tstart);
-            if (cls) shifts.add(cls);
-          });
+    let container = info.el.querySelector('.inst-dot-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'inst-dot-container';
+      info.el.style.position = 'relative';
+      info.el.style.overflow = 'visible';
+      info.el.appendChild(container);
+    }
 
-          shifts.forEach((cls) => {
-            const target = dayEl.querySelector(`.${cls}`);
-            if (!target) return;
+    const mountEl = document.createElement('div');
+    container.appendChild(mountEl);
 
-            let container = target.querySelector('.inst-dot-container');
-            if (!container) {
-              container = document.createElement('div');
-              container.className = 'inst-dot-container';
-              target.style.position = 'relative';
-              target.style.overflow = 'visible';
-              target.appendChild(container);
-            }
+    const e = shiftEvents[0];
 
-            const dot = document.createElement('span');
-            dot.className = 'inst-dot tooltip-area';
-            dot.style.backgroundColor = inst.color;
-
-            const shiftEvents = events.filter(
-              (ev) => shiftClassByTime(ev.tstart) === cls
-            );
-            if (shiftEvents.length) {
-              const e = shiftEvents[0];
-              const tooltip = document.createElement('div');
-              tooltip.className = 'content-tooltip-area';
-              tooltip.innerHTML = `
-                <p>INSTRUCTOR: ${inst.name}</p>
-                <p>FICHA: ${e.fiche}</p>
-                <p>AMBIENTE: ${e.environment}</p>
-                <p>PROGRAMA: ${e.program}</p>
-                <p>OBSERVACIÓN: ${e.observation}</p>
-                <p>HORA INICIO: ${e.tstart}</p>
-                <p>HORA FIN: ${e.tend}</p>
-              `;
-              dot.appendChild(tooltip);
-            }
-
-            container.appendChild(dot);
-          });
-        });
-      });
+    const app = createApp({
+      components: { VTooltip },
+      data: () => ({ inst, e }),
+      template: `
+        <VTooltip>
+          <span class="inst-dot" :style="{ backgroundColor: inst.color }"></span>
+          <template #popper>
+            <div class="content-tooltip-event">
+              <p>INSTRUCTOR: {{ inst.name }}</p>
+              <p>FICHA: {{ e.fiche }}</p>
+              <p>AMBIENTE: {{ e.environment }}</p>
+              <p>PROGRAMA: {{ e.program }}</p>
+              <p>OBSERVACIÓN: {{ e.observation }}</p>
+              <p>HORA INICIO: {{ e.tstart }}</p>
+              <p>HORA FIN: {{ e.tend }}</p>
+            </div>
+          </template>
+        </VTooltip>
+      `,
     });
-  }
+
+    app.mount(mountEl);
+  });
+}
 </script>
 
 <style>
