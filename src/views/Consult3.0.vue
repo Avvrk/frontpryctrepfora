@@ -1226,6 +1226,7 @@ function addColors() {
   transform: translateX(-50%);
   display: flex;
   gap: 2px;
+  overflow: visible;
 }
 
 .inst-dot {
@@ -1233,7 +1234,7 @@ function addColors() {
   height: 14px;
   border-radius: 50%;
   display: inline-block;
-  position: relative;
+  overflow: visible;
 }
 
 /* Leyenda de horarios */

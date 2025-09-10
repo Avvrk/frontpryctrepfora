@@ -167,6 +167,10 @@
   opacity: 1;
   z-index: 1;
 }
+
+.fc-daygrid-event {
+  overflow: visible;
+}
 .customEvents {
   white-space: nowrap;
   text-overflow: ellipsis !important;
