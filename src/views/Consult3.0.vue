@@ -1161,35 +1161,55 @@ function addColors() {
       const [, month] = dateStr.split('-');
 
       legendInstructors.value.forEach((inst) => {
-        const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
-        const shifts = new Set();
+          const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
+          const shifts = new Set();
 
-        (Array.isArray(events) ? events : [events]).forEach((ev) => {
-          const cls = shiftClassByTime(ev.tstart);
-          if (cls) shifts.add(cls);
-        });
+          (Array.isArray(events) ? events : [events]).forEach((ev) => {
+            const cls = shiftClassByTime(ev.tstart);
+            if (cls) shifts.add(cls);
+          });
 
-        shifts.forEach((cls) => {
-          const target = dayEl.querySelector(`.${cls}`);
-          if (!target) return;
+          shifts.forEach((cls) => {
+            const target = dayEl.querySelector(`.${cls}`);
+            if (!target) return;
 
-          let container = target.querySelector('.inst-dot-container');
-          if (!container) {
-            container = document.createElement('div');
-            container.className = 'inst-dot-container';
-            target.style.position = 'relative';
-            target.appendChild(container);
-          }
+            let container = target.querySelector('.inst-dot-container');
+            if (!container) {
+              container = document.createElement('div');
+              container.className = 'inst-dot-container';
+              target.style.position = 'relative';
+              target.appendChild(container);
+            }
 
-          const dot = document.createElement('span');
-          dot.className = 'inst-dot';
-          dot.style.backgroundColor = inst.color;
-          container.appendChild(dot);
+            const dot = document.createElement('span');
+            dot.className = 'inst-dot tooltip-area';
+            dot.style.backgroundColor = inst.color;
+
+            const shiftEvents = events.filter(
+              (ev) => shiftClassByTime(ev.tstart) === cls
+            );
+            if (shiftEvents.length) {
+              const e = shiftEvents[0];
+              const tooltip = document.createElement('div');
+              tooltip.className = 'content-tooltip-area';
+              tooltip.innerHTML = `
+                <p>INSTRUCTOR: ${inst.name}</p>
+                <p>FICHA: ${e.fiche}</p>
+                <p>AMBIENTE: ${e.environment}</p>
+                <p>PROGRAMA: ${e.program}</p>
+                <p>OBSERVACIÓN: ${e.observation}</p>
+                <p>HORA INICIO: ${e.tstart}</p>
+                <p>HORA FIN: ${e.tend}</p>
+              `;
+              dot.appendChild(tooltip);
+            }
+
+            container.appendChild(dot);
+          });
         });
       });
     });
-  });
-}
+  }
 </script>
 
 <style>
