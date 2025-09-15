@@ -107,6 +107,32 @@
             </template>
           </q-select>
         </div>
+        <div class="col-11 col-sm-6 q-px-md" v-if="opcion == 'ambiente'">
+          <q-select
+            filled
+            :disable="isLoadingData"
+            v-model="environment"
+            label="Ambiente"
+            use-input
+            hide-selected
+            options-dense
+            fill-input
+            input-debounce="0"
+            :options="filterEnvironment"
+            @filter="filterEnvi"
+            lazy-rules
+            :rules="[(val) => !!val || 'El campo es requerido']"
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey"> No results </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:prepend>
+              <span class="material-symbols-outlined"> person </span>
+            </template>
+          </q-select>
+        </div>
         <div class="col-11 col-sm-6 q-px-md">
           <q-input
             filled
@@ -309,7 +335,7 @@
          </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
-        <div class="row justify-center hoursmonth" v-if="existInfo">
+        <div class="row justify-center hoursmonth" v-if="existInfo && Math.ceil(monthHours[yearsMonth[i]] || 0) > 0">
           <div>
             HORAS DEL MES:
             {{ Math.ceil(monthHours[yearsMonth[i]] || 0) }} HORAS
@@ -464,7 +490,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, computed, nextTick } from 'vue';
+import { ref, onBeforeMount, computed, createApp } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -481,6 +507,7 @@ import esLocale from '@fullcalendar/core/locales/es';
 
 import { storeUser } from '../store/users.js';
 import { storeEnv } from '../store/Environments.js';
+import { VTooltip } from 'floating-vue';
 import tableFormacion from '../components/Reports/tables/tableFormacion.vue';
 import tableOtrasActividades from '../components/Reports/tables/tableOtrasActividades.vue';
 import { excelToReports } from '../services/excelToReports.js';
@@ -660,9 +687,7 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
-      datesSet: function () {
-        addColors();
-      },
+      eventDidMount: addColors,
     });
   });
 
@@ -1002,7 +1027,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA MAÑANA',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#929292',
+        borderColor: '#fedd07',
         order: 1,
         className: 'jornada-mañana',
       },
@@ -1013,7 +1038,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA TARDE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#929292',
+        borderColor: '#fe9707',
         order: 2,
         className: 'jornada-tarde',
       },
@@ -1024,7 +1049,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA NOCHE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#929292',
+        borderColor: '#6d83c9',
         order: 3,
         className: 'jornada-noche',
       }
@@ -1119,6 +1144,8 @@ function generateMonthEvents(my) {
         }
       }
     });
+
+    app.mount(mountEl);
   });
 
   // inserta las segundas mitades de jornadas mixtas en los slots siguientes

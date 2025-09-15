@@ -27,7 +27,7 @@ export const storeReport = defineStore(
       }
     };
 
-    const generateReportByInstr = async (data) => {
+    const generateReportByInstr = async (data, notify = true) => {
       try {
         const resp = await requestAxios.post("/reports/instructor", data, {
           headers: {
@@ -36,7 +36,9 @@ export const storeReport = defineStore(
         });
         return resp;
       } catch (error) {
-        notifyErrorRequest(error.response.data.msg);
+        if (notify) {
+          notifyErrorRequest(error?.response?.data?.msg);
+        }
         return error;
       }
     };
