@@ -540,6 +540,13 @@ let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
 
+const clearDataCalender = () => {
+  calendarOptions.value = [];
+  existInfo.value = false;
+  legendInstructors.value = [];
+  monthHours.value = {};
+};
+
 const router = useRouter();
 
 const useStoreReport = storeReport();
@@ -612,12 +619,7 @@ function generateCalendar() {
     let events = null;
     let data = null;
 
-    events = generateMonthEvents(
-      my,
-      eventsCalender.value,
-      fStart.value,
-      fEnd.value
-    );
+    events = generateMonthEvents(my);
 
     // events = eventsCalender.value[my.split('-')[1]];
 
@@ -726,7 +728,9 @@ async function getReport() {
           instructor: prof.id,
           fstart: fStart.value,
           fend: fEnd.value,
-        });
+        }, 
+        false
+      );
 
         // cada profe tendrá su registro en un objeto
         prof.events = [];
@@ -1150,12 +1154,101 @@ function generateMonthEvents(my) {
 
   return events;
 }
+
+function shiftClassByTime(time) {
+  const minutes = parseTimeToMinutes(time);
+  if (minutes >= 390 && minutes < 750) return 'jornada-mañana';
+  if (minutes >= 750 && minutes < 1110) return 'jornada-tarde';
+  if (minutes >= 1110 && minutes < 1410) return 'jornada-noche';
+  return null;
+}
+
+function addColors() {
+  nextTick(() => {
+    // eliminar indicadores anteriores para evitar duplicados al navegar
+    document.querySelectorAll('.inst-dot-container').forEach((el) => el.remove());
+
+    document.querySelectorAll('.fc-daygrid-day').forEach((dayEl) => {
+      const dateStr = dayEl.getAttribute('data-date');
+      if (!dateStr) return;
+
+      const [, month] = dateStr.split('-');
+
+      legendInstructors.value.forEach((inst) => {
+          const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
+          const shifts = new Set();
+
+          (Array.isArray(events) ? events : [events]).forEach((ev) => {
+            const cls = shiftClassByTime(ev.tstart);
+            if (cls) shifts.add(cls);
+          });
+
+          shifts.forEach((cls) => {
+            const target = dayEl.querySelector(`.${cls}`);
+            if (!target) return;
+
+            let container = target.querySelector('.inst-dot-container');
+            if (!container) {
+              container = document.createElement('div');
+              container.className = 'inst-dot-container';
+              target.style.position = 'relative';
+              target.style.overflow = 'visible';
+              target.appendChild(container);
+            }
+
+            const dot = document.createElement('span');
+            dot.className = 'inst-dot tooltip-area';
+            dot.style.backgroundColor = inst.color;
+
+            const shiftEvents = events.filter(
+              (ev) => shiftClassByTime(ev.tstart) === cls
+            );
+            if (shiftEvents.length) {
+              const e = shiftEvents[0];
+              const tooltip = document.createElement('div');
+              tooltip.className = 'content-tooltip-area';
+              tooltip.innerHTML = `
+                <p>INSTRUCTOR: ${inst.name}</p>
+                <p>FICHA: ${e.fiche}</p>
+                <p>AMBIENTE: ${e.environment}</p>
+                <p>PROGRAMA: ${e.program}</p>
+                <p>OBSERVACIÓN: ${e.observation}</p>
+                <p>HORA INICIO: ${e.tstart}</p>
+                <p>HORA FIN: ${e.tend}</p>
+              `;
+              dot.appendChild(tooltip);
+            }
+
+            container.appendChild(dot);
+          });
+        });
+      });
+    });
+  }
 </script>
 
 <style>
 #calender {
   width: 1000px !important;
   height: 665px !important;
+}
+
+.inst-dot-container {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  overflow: visible;
+}
+
+.inst-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  overflow: visible;
 }
 
 /* Leyenda de horarios */

@@ -35,6 +35,10 @@
   text-transform: capitalize !important;
 }
 
+.fc-daygrid-event {
+  overflow: visible;
+}
+
 .customEvents {
   white-space: nowrap;
   text-overflow: ellipsis !important;
