@@ -326,7 +326,7 @@
         </div>
 
         <!-- MIXTA -->
-         <div class="legend-item mixta">
+         <div class="legend-item mixta" v-if="shape != 'area'">
           <span class="legend-color" aria-label="Noche"></span>
           <span class="legend-text">Mixta</span>
 <!--           <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
@@ -490,7 +490,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, computed, createApp } from 'vue';
+import { ref, onBeforeMount, computed, createApp, nextTick } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -1027,7 +1027,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA MAÑANA',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#fedd07',
+        borderColor: shape.value == 'area' ? '#fedd07' : '#929292',
         order: 1,
         className: 'jornada-mañana',
       },
@@ -1038,7 +1038,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA TARDE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#fe9707',
+        borderColor: shape.value == 'area' ? '#fe9707' : '#929292',
         order: 2,
         className: 'jornada-tarde',
       },
@@ -1049,7 +1049,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA NOCHE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: '#6d83c9',
+        borderColor: shape.value == 'area' ? '#6d83c9' : '#929292',
         order: 3,
         className: 'jornada-noche',
       }
@@ -1144,8 +1144,6 @@ function generateMonthEvents(my) {
         }
       }
     });
-
-    app.mount(mountEl);
   });
 
   // inserta las segundas mitades de jornadas mixtas en los slots siguientes
@@ -1202,56 +1200,97 @@ function addColors() {
       const [, month] = dateStr.split('-');
 
       legendInstructors.value.forEach((inst) => {
-          const events = (inst.events?.[month] || []).filter((ev) => ev.start === dateStr);
-          const shifts = new Set();
+          const monthEvents = inst.events?.[month] || [];
+        const dayEvents = Array.isArray(monthEvents)
+          ? monthEvents.filter((ev) => ev.start === dateStr)
+          : monthEvents?.start === dateStr
+            ? [monthEvents]
+            : [];
 
-          (Array.isArray(events) ? events : [events]).forEach((ev) => {
-            const cls = shiftClassByTime(ev.tstart);
-            if (cls) shifts.add(cls);
-          });
+        if (!dayEvents.length) {
+          return;
+        }
 
-          shifts.forEach((cls) => {
-            const target = dayEl.querySelector(`.${cls}`);
-            if (!target) return;
+        const eventsByShift = dayEvents.reduce((acc, ev) => {
+          const cls = shiftClassByTime(ev.tstart);
+          if (!cls) {
+            return acc;
+          }
 
-            let container = target.querySelector('.inst-dot-container');
-            if (!container) {
-              container = document.createElement('div');
-              container.className = 'inst-dot-container';
-              target.style.position = 'relative';
-              target.style.overflow = 'visible';
-              target.appendChild(container);
-            }
+          if (!acc.has(cls)) {
+            acc.set(cls, []);
+          }
 
-            const dot = document.createElement('span');
-            dot.className = 'inst-dot tooltip-area';
-            dot.style.backgroundColor = inst.color;
+          acc.get(cls).push(ev);
+          return acc;
+        }, new Map());
 
-            const shiftEvents = events.filter(
-              (ev) => shiftClassByTime(ev.tstart) === cls
-            );
-            if (shiftEvents.length) {
-              const e = shiftEvents[0];
-              const tooltip = document.createElement('div');
-              tooltip.className = 'content-tooltip-area';
-              tooltip.innerHTML = `
-                <p>INSTRUCTOR: ${inst.name}</p>
-                <p>FICHA: ${e.fiche}</p>
-                <p>AMBIENTE: ${e.environment}</p>
-                <p>PROGRAMA: ${e.program}</p>
-                <p>OBSERVACIÓN: ${e.observation}</p>
-                <p>HORA INICIO: ${e.tstart}</p>
-                <p>HORA FIN: ${e.tend}</p>
-              `;
-              dot.appendChild(tooltip);
-            }
+        eventsByShift.forEach((shiftEvents, cls) => {
+          const target = dayEl.querySelector(`.${cls}`);
+          if (!target) {
+            return;
+          }
 
-            container.appendChild(dot);
+          let container = target.querySelector('.inst-dot-container');
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'inst-dot-container';
+            target.style.position = 'relative';
+            target.style.overflow = 'visible';
+            target.appendChild(container);
+          }
+
+          const dot = document.createElement('span');
+          dot.className = 'inst-dot tooltip-area';
+          dot.style.backgroundColor = inst.color;
+
+          const [event] = shiftEvents;
+          if (event) {
+            dot.appendChild(createInstructorTooltip(inst, event));
+          }
+
+          container.appendChild(dot);
           });
         });
       });
     });
   }
+
+  function createInstructorTooltip(inst, event) {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'content-tooltip-area';
+
+  const fallbackText = (value) => {
+    if (value === undefined || value === null) {
+      return 'No asignado';
+    }
+
+    const text = String(value).trim();
+    return text.length ? text : 'No asignado';
+  };
+
+  const rows = [
+    ['Instructor', inst?.name],
+    ['Ficha', event?.fiche],
+    ['Ambiente', event?.environment],
+  ];
+
+  rows.forEach(([label, value]) => {
+    const row = document.createElement('p');
+    row.className = 'content-tooltip-area__row';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'content-tooltip-area__label';
+    labelEl.textContent = `${label}: `;
+
+    row.appendChild(labelEl);
+    row.appendChild(document.createTextNode(fallbackText(value)));
+
+    tooltip.appendChild(row);
+  });
+
+  return tooltip;
+}
 </script>
 
 <style>
