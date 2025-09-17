@@ -490,7 +490,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, computed, createApp, nextTick } from 'vue';
+import { ref, onBeforeMount, computed, createApp, nextTick, watch } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -543,9 +543,9 @@ let fEnd = ref();
 let optionsFiches = ref([]);
 let optionsInst = ref([]);
 let optionsEnvir = ref([]);
-let months = ref();
-let yearsMonth = ref();
-let eventsCalender = ref();
+let months = ref([]);
+let yearsMonth = ref([]);
+let eventsCalender = ref({});
 let calendarOptions = ref([]);
 let existInfo = ref(false);
 let monthHours = ref({});
@@ -567,12 +567,34 @@ let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
 
-const clearDataCalender = () => {
+const resetReportData = () => {
   calendarOptions.value = [];
+  eventsCalender.value = {};
   existInfo.value = false;
   legendInstructors.value = [];
   monthHours.value = {};
+  months.value = [];
+  yearsMonth.value = [];
+  nameInstructor.value = '';
+  dataFiche.value = '';
+  nameEnvironment.value = '';
+  hoursWork1.value = 0;
+  hoursWork2.value = 0;
+  showCalender.value = true;
+  print.value = false;
 };
+
+const clearDataCalender = () => {
+  resetReportData();
+};
+
+watch(
+  shape,
+  () => {
+    resetReportData();
+  },
+  { flush: 'post' },
+);
 
 const router = useRouter();
 
@@ -597,6 +619,7 @@ onBeforeMount(async () => {
 });
 
 function cancel() {
+resetReportData();
   existInfo.value = false;
   fiche.value = '';
   inst.value = '';
@@ -642,6 +665,12 @@ async function sendReport() {
 }
 
 function generateCalendar() {
+  calendarOptions.value = [];
+  if (!Array.isArray(yearsMonth.value) || yearsMonth.value.length === 0) {
+    existInfo.value = false;
+    return;
+  }
+
   yearsMonth.value.forEach((my) => {
     let events = null;
     let data = null;
@@ -729,6 +758,7 @@ async function getEnvironments() {
 }
 
 async function getReport() {
+resetReportData();
   if (shape.value == 'area') {
     console.log(copyFilterInst.value);
     const list = copyFilterInst.value.map((i) => ({
