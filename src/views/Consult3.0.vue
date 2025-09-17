@@ -1300,21 +1300,67 @@ function addColors() {
 }
 
 .inst-dot-container {
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;           /* ya pones el target relative en JS */
+  bottom: 4px;
+  left: 4px;
   display: flex;
-  gap: 2px;
-  overflow: visible;
+  gap: 4px;
+  z-index: 20;                  /* por encima del contenido del día */
 }
 
+/* el puntico */
 .inst-dot {
-  width: 14px;
-  height: 14px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
-  overflow: visible;
+  position: relative;  
+  z-index: 1000;         /* para posicionar el tooltip respecto al punto */
+}
+
+/* ocultar tooltip por defecto */
+.tooltip-area .content-tooltip-area {
+  position: absolute;
+  top: -6px;                    /* ajusta a gusto */
+  left: 12px;                   /* separadito del punto */
+  background: #111;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
+  z-index: 999999;
+  pointer-events: none;         /* evita robos de hover */
+}
+
+/* flechita opcional */
+.tooltip-area .content-tooltip-area::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #111 transparent transparent;
+}
+
+/* mostrar al pasar el mouse por el puntico */
+.tooltip-area:hover .content-tooltip-area {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+/* por si FullCalendar intenta recortar el contenido del día */
+.fc-daygrid-day {
+  overflow: visible !important;
 }
 
 /* Leyenda de horarios */
