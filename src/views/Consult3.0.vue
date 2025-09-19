@@ -1288,9 +1288,12 @@ function addColors() {
           dot.style.backgroundColor = inst.color;
 
           const [event] = shiftEvents;
-          if (event) {
-            dot.appendChild(createInstructorTooltip(inst, event));
-          }
+if (event) {
+  const html = buildTooltipHTML(inst, event);
+  dot.addEventListener('mouseenter', (ev) => showGlobalTooltip(html, ev));
+  dot.addEventListener('mousemove',  (ev) => moveGlobalTooltip(ev));
+  dot.addEventListener('mouseleave', hideGlobalTooltip);
+}
 
           container.appendChild(dot);
           });
@@ -1334,6 +1337,69 @@ function addColors() {
 
   return tooltip;
 }
+
+function ensureGlobalTooltip() {
+  let el = document.getElementById('inst-global-tooltip');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'inst-global-tooltip';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function buildTooltipHTML(inst, event) {
+  const fallback = (v) => {
+    if (v === undefined || v === null) return 'No asignado';
+    const s = String(v).trim();
+    return s.length ? s : 'No asignado';
+  };
+
+  return `
+    <div class="row"><span class="label">Instructor:</span>${fallback(inst?.name)}</div>
+    <div class="row"><span class="label">Ficha:</span>${fallback(event?.fiche)}</div>
+    <div class="row"><span class="label">Ambiente:</span>${fallback(event?.environment)}</div>
+  `;
+}
+
+const GLOBAL_OFFSET = { x: 12, y: 8 };
+
+function positionTooltipNear(ev) {
+  const tip = ensureGlobalTooltip();
+  const vpW = window.innerWidth, vpH = window.innerHeight;
+  const rectX = (ev.clientX ?? 0) + GLOBAL_OFFSET.x;
+  const rectY = (ev.clientY ?? 0) + GLOBAL_OFFSET.y;
+
+  // mide el tamaño actual
+  tip.style.transform = 'translate(-9999px,-9999px)';
+  tip.classList.add('is-visible');
+  const { width, height } = tip.getBoundingClientRect();
+
+  // evita salirte de la pantalla
+  let x = rectX;
+  let y = rectY;
+  if (x + width + 8 > vpW) x = Math.max(8, vpW - width - 8);
+  if (y + height + 8 > vpH) y = Math.max(8, vpH - height - 8);
+
+  tip.style.transform = `translate(${x}px, ${y}px)`;
+}
+
+function showGlobalTooltip(html, ev) {
+  const tip = ensureGlobalTooltip();
+  tip.innerHTML = html;
+  tip.classList.add('is-visible');
+  positionTooltipNear(ev);
+}
+
+function moveGlobalTooltip(ev) {
+  positionTooltipNear(ev);
+}
+
+function hideGlobalTooltip() {
+  const tip = ensureGlobalTooltip();
+  tip.classList.remove('is-visible');
+  tip.style.transform = 'translate(-9999px,-9999px)';
+}
 </script>
 
 <style>
@@ -1343,12 +1409,11 @@ function addColors() {
 }
 
 .inst-dot-container {
- /* ya pones el target relative en JS */
   bottom: 4px;
   left: 4px;
   display: flex;
   gap: 4px;
-  padding: 4px 3px;                 /* por encima del contenido del día */
+  padding: 4px 3px;           
 }
 
 /* el puntico */
@@ -1492,5 +1557,43 @@ function addColors() {
   left: 50%;
   transform: translate(-50%);
   margin-top: 30px;
+}
+
+/* Tooltip global que vive en <body> */
+#inst-global-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;   /* literal techo */
+  background: #111;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  pointer-events: none;         /* no roba hover */
+  opacity: 0;
+  transform: translate(-9999px,-9999px);
+  transition: opacity .12s ease;
+}
+
+#inst-global-tooltip.is-visible {
+  opacity: 1;
+}
+
+#inst-global-tooltip .row {
+  margin: 2px 0;
+}
+#inst-global-tooltip .label {
+  font-weight: 600;
+  margin-right: 4px;
+  opacity: .9;
+}
+
+/* Por si imprimes PDF, que no salga */
+@media print {
+  #inst-global-tooltip { display: none !important; }
 }
 </style>
