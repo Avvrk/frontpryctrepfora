@@ -979,14 +979,14 @@ function changeColor(event) {
 
   if (shiftLower === 'jornada mañana') {
     return {
-      backgroundColor: '#fedd07',
-      borderColor: '#fedd07',
+      backgroundColor: '#FFD926',
+      borderColor: '#FFD926',
       textColor: '#000000',
     };
   } else if (shiftLower === 'jornada tarde') {
     return {
-      backgroundColor: '#fe9707',
-      borderColor: '#fe9707',
+      backgroundColor: '#FF8400',
+      borderColor: '#FF8400',
       textColor: '#FFFFFF',
     };
   } else if (shiftLower === 'jornada mixta') {
@@ -998,8 +998,8 @@ function changeColor(event) {
   } else {
     // por defecto se aplica el color del turno nocturno
     return {
-      backgroundColor: '#6d83c9',
-      borderColor: '#6d83c9',
+      backgroundColor: '#00008B',
+      borderColor: '#00008B',
       textColor: '#FFFFFF',
     };
   }
@@ -1057,7 +1057,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA MAÑANA',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: shape.value == 'area' ? '#fedd07' : '#929292',
+        borderColor: shape.value == 'area' ? '#FFD926' : '#929292',
         order: 1,
         className: 'jornada-mañana',
       },
@@ -1068,7 +1068,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA TARDE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: shape.value == 'area' ? '#fe9707' : '#929292',
+        borderColor: shape.value == 'area' ? '#FF8400' : '#929292',
         order: 2,
         className: 'jornada-tarde',
       },
@@ -1079,7 +1079,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA NOCHE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: shape.value == 'area' ? '#6d83c9' : '#929292',
+        borderColor: shape.value == 'area' ? '#00008B' : '#929292',
         order: 3,
         className: 'jornada-noche',
       }
@@ -1416,15 +1416,15 @@ function addColors() {
 }
 
 .legend-item.morning .legend-color {
-  background-color: #fedd07;
+  background-color: #FFD926;
 }
 
 .legend-item.afternoon .legend-color {
-  background-color: #fe9707;
+  background-color: #FF8400;
 }
 
 .legend-item.night .legend-color {
-  background-color: #6d83c9;
+  background-color: #00008B;
 }
 
 .legend-item.mixta .legend-color {
@@ -1445,6 +1445,13 @@ function addColors() {
 
 .fc .fc-scrollgrid-liquid {
   border-color: rgb(65, 64, 64);
+}
+
+.jornada-mañana,
+.jornada-tarde,
+.jornada-noche {
+  border-width: 2px !important;
+  border-style: solid;
 }
 
 .jornadaMixta {
