@@ -1221,7 +1221,13 @@ function shiftClassByTime(time) {
 function addColors() {
   nextTick(() => {
     // eliminar indicadores anteriores para evitar duplicados al navegar
-    document.querySelectorAll('.inst-dot-container').forEach((el) => el.remove());
+    document.querySelectorAll('.inst-dot-container').forEach((el) => {
+      const parent = el.parentElement;
+      if (parent?.dataset?.instDotsPrepared) {
+        delete parent.dataset.instDotsPrepared;
+      }
+      el.remove();
+    });
 
     document.querySelectorAll('.fc-daygrid-day').forEach((dayEl) => {
       const dateStr = dayEl.getAttribute('data-date');
@@ -1259,6 +1265,13 @@ function addColors() {
           const target = dayEl.querySelector(`.${cls}`);
           if (!target) {
             return;
+          }
+
+          if (!target.dataset.instDotsPrepared) {
+            while (target.firstChild) {
+              target.removeChild(target.firstChild);
+            }
+            target.dataset.instDotsPrepared = 'true';
           }
 
           let container = target.querySelector('.inst-dot-container');
@@ -1330,22 +1343,20 @@ function addColors() {
 }
 
 .inst-dot-container {
-  position: absolute;           /* ya pones el target relative en JS */
+ /* ya pones el target relative en JS */
   bottom: 4px;
   left: 4px;
   display: flex;
   gap: 4px;
-  z-index: 20;                  /* por encima del contenido del día */
+  padding: 4px 3px;                 /* por encima del contenido del día */
 }
 
 /* el puntico */
 .inst-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  display: inline-block;
-  position: relative;  
-  z-index: 1000;         /* para posicionar el tooltip respecto al punto */
+     /* para posicionar el tooltip respecto al punto */
 }
 
 /* ocultar tooltip por defecto */
@@ -1365,7 +1376,6 @@ function addColors() {
   visibility: hidden;
   transform: translateY(-4px);
   transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
-  z-index: 999999;
   pointer-events: none;         /* evita robos de hover */
 }
 
@@ -1406,7 +1416,8 @@ function addColors() {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .legend-color {
@@ -1434,7 +1445,6 @@ function addColors() {
 .hoursmonth {
   position: absolute;
   left: 50%;
-
   transform: translate(-50%, 300%); /* baja 10px más */
 }
 
@@ -1454,17 +1464,17 @@ function addColors() {
   border-style: solid;
 }
 
-.jornadaMixta {
+/* .jornadaMixta {
   border-radius: 3px;
-  border: 1px solid transparent !important; /* fuerza ancho/estilo del borde */
-  border-image: none !important;            /* neutraliza intentos previos */
+  border: 1px solid transparent !important;  fuerza ancho/estilo del borde 
+  border-image: none !important;             neutraliza intentos previos 
   background-origin: border-box;
   background-clip: padding-box, border-box !important;
-  overflow: hidden; /* respeta el radius con fondos múltiples */
+  overflow: hidden;respeta el radius con fondos múltiples 
   background:
     linear-gradient(to right, #fedd07, #6d83c9) padding-box,
     linear-gradient(to right, #fedd07, #6d83c9) border-box !important;
-}
+} */
 
 .to {
   width: 300px;
