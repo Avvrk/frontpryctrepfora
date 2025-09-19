@@ -326,16 +326,19 @@
         </div>
 
         <!-- MIXTA -->
-         <div class="legend-item mixta" v-if="shape != 'area'">
+        <div class="legend-item mixta" v-if="shape != 'area'">
           <span class="legend-color" aria-label="Noche"></span>
           <span class="legend-text">Mixta</span>
-<!--           <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
+          <!--           <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
             {{ shiftRanges.mixta }}
           </q-tooltip> -->
-         </div>
+        </div>
       </div>
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
-        <div class="row justify-center hoursmonth" v-if="existInfo && Math.ceil(monthHours[yearsMonth[i]] || 0) > 0">
+        <div
+          class="row justify-center hoursmonth"
+          v-if="existInfo && Math.ceil(monthHours[yearsMonth[i]] || 0) > 0"
+        >
           <div>
             HORAS DEL MES:
             {{ Math.ceil(monthHours[yearsMonth[i]] || 0) }} HORAS
@@ -593,7 +596,7 @@ watch(
   () => {
     resetReportData();
   },
-  { flush: 'post' },
+  { flush: 'post' }
 );
 
 const router = useRouter();
@@ -619,7 +622,7 @@ onBeforeMount(async () => {
 });
 
 function cancel() {
-resetReportData();
+  resetReportData();
   existInfo.value = false;
   fiche.value = '';
   inst.value = '';
@@ -758,7 +761,7 @@ async function getEnvironments() {
 }
 
 async function getReport() {
-resetReportData();
+  resetReportData();
   if (shape.value == 'area') {
     console.log(copyFilterInst.value);
     const list = copyFilterInst.value.map((i) => ({
@@ -772,20 +775,21 @@ resetReportData();
 
     const { months: mm, yearsMonth: yymm } = computeMonthsYears(
       fStart.value,
-      fEnd.value,
+      fEnd.value
     );
     months.value = mm;
     yearsMonth.value = yymm;
 
     for (const prof of legendInstructors.value) {
       try {
-        const res = await useStoreReport.generateReportByInstr({
-          instructor: prof.id,
-          fstart: fStart.value,
-          fend: fEnd.value,
-        }, 
-        false
-      );
+        const res = await useStoreReport.generateReportByInstr(
+          {
+            instructor: prof.id,
+            fstart: fStart.value,
+            fend: fEnd.value,
+          },
+          false
+        );
 
         // cada profe tendrá su registro en un objeto
         prof.events = [];
@@ -901,7 +905,7 @@ function filterInstru(val, update, abort) {
     const needle = val.toLocaleLowerCase();
 
     filterInstructor.value = copyFilterInst.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
+      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
     );
   });
 }
@@ -922,7 +926,7 @@ function handleThematicareaChange(selectedArea) {
   // se filtran solo los instructores cuyo campo "area" coincide
   copyFilterInst.value = optionsInst.value.filter(
     (i) =>
-      i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase(),
+      i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase()
   );
 
   // el arreglo resultante se usa para mostrar las opciones disponibles
@@ -939,7 +943,7 @@ function parseTimeToMinutes(timeText) {
     const [time, period] = text.split(' ');
     let [h, m] = time.split(':').map(Number);
     if (/P\.M\./i.test(period) && h !== 12) h += 12; // convierte PM a formato 24h
-    if (/A\.M\./i.test(period) && h === 12) h = 0;   // 12 A.M. corresponde a 00h
+    if (/A\.M\./i.test(period) && h === 12) h = 0; // 12 A.M. corresponde a 00h
     return h * 60 + m;
   }
 
@@ -1018,7 +1022,7 @@ function computeMonthsYears(fstartStr, fendStr) {
 
   // usamos UTC como en el back (getUTCMonth / getUTCFullYear) para evitar TZ
   let cursor = new Date(
-    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1)
   );
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
 
@@ -1236,12 +1240,12 @@ function addColors() {
       const [, month] = dateStr.split('-');
 
       legendInstructors.value.forEach((inst) => {
-          const monthEvents = inst.events?.[month] || [];
+        const monthEvents = inst.events?.[month] || [];
         const dayEvents = Array.isArray(monthEvents)
           ? monthEvents.filter((ev) => ev.start === dateStr)
           : monthEvents?.start === dateStr
-            ? [monthEvents]
-            : [];
+          ? [monthEvents]
+          : [];
 
         if (!dayEvents.length) {
           return;
@@ -1288,21 +1292,23 @@ function addColors() {
           dot.style.backgroundColor = inst.color;
 
           const [event] = shiftEvents;
-if (event) {
-  const html = buildTooltipHTML(inst, event);
-  dot.addEventListener('mouseenter', (ev) => showGlobalTooltip(html, ev));
-  dot.addEventListener('mousemove',  (ev) => moveGlobalTooltip(ev));
-  dot.addEventListener('mouseleave', hideGlobalTooltip);
-}
+          if (event) {
+            const html = buildTooltipHTML(inst, event);
+            dot.addEventListener('mouseenter', (ev) =>
+              showGlobalTooltip(html, ev)
+            );
+            dot.addEventListener('mousemove', (ev) => moveGlobalTooltip(ev));
+            dot.addEventListener('mouseleave', hideGlobalTooltip);
+          }
 
           container.appendChild(dot);
-          });
         });
       });
     });
-  }
+  });
+}
 
-  function createInstructorTooltip(inst, event) {
+function createInstructorTooltip(inst, event) {
   const tooltip = document.createElement('div');
   tooltip.className = 'content-tooltip-area';
 
@@ -1356,9 +1362,15 @@ function buildTooltipHTML(inst, event) {
   };
 
   return `
-    <div class="row"><span class="label">Instructor:</span>${fallback(inst?.name)}</div>
-    <div class="row"><span class="label">Ficha:</span>${fallback(event?.fiche)}</div>
-    <div class="row"><span class="label">Ambiente:</span>${fallback(event?.environment)}</div>
+    <div class="row"><span class="label">Instructor:</span>${fallback(
+      inst?.name
+    )}</div>
+    <div class="row"><span class="label">Ficha:</span>${fallback(
+      event?.fiche
+    )}</div>
+    <div class="row"><span class="label">Ambiente:</span>${fallback(
+      event?.environment
+    )}</div>
   `;
 }
 
@@ -1366,7 +1378,8 @@ const GLOBAL_OFFSET = { x: 12, y: 8 };
 
 function positionTooltipNear(ev) {
   const tip = ensureGlobalTooltip();
-  const vpW = window.innerWidth, vpH = window.innerHeight;
+  const vpW = window.innerWidth,
+    vpH = window.innerHeight;
   const rectX = (ev.clientX ?? 0) + GLOBAL_OFFSET.x;
   const rectY = (ev.clientY ?? 0) + GLOBAL_OFFSET.y;
 
@@ -1413,7 +1426,7 @@ function hideGlobalTooltip() {
   left: 4px;
   display: flex;
   gap: 4px;
-  padding: 4px 3px;           
+  padding: 4px 3px;
 }
 
 /* el puntico */
@@ -1421,14 +1434,14 @@ function hideGlobalTooltip() {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-     /* para posicionar el tooltip respecto al punto */
+  /* para posicionar el tooltip respecto al punto */
 }
 
 /* ocultar tooltip por defecto */
 .tooltip-area .content-tooltip-area {
   position: absolute;
-  top: -6px;                    /* ajusta a gusto */
-  left: 12px;                   /* separadito del punto */
+  top: -6px; /* ajusta a gusto */
+  left: 12px; /* separadito del punto */
   background: #111;
   color: #fff;
   padding: 8px 10px;
@@ -1436,17 +1449,18 @@ function hideGlobalTooltip() {
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   opacity: 0;
   visibility: hidden;
   transform: translateY(-4px);
-  transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
-  pointer-events: none;       /* evita robos de hover */
+  transition: opacity 0.15s ease, transform 0.15s ease,
+    visibility 0s linear 0.15s;
+  pointer-events: none; /* evita robos de hover */
 }
 
 /* flechita opcional */
 .tooltip-area .content-tooltip-area::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 8px;
   left: -6px;
@@ -1492,15 +1506,15 @@ function hideGlobalTooltip() {
 }
 
 .legend-item.morning .legend-color {
-  background-color: #FFD926;
+  background-color: #ffd926;
 }
 
 .legend-item.afternoon .legend-color {
-  background-color: #FF8400;
+  background-color: #ff8400;
 }
 
 .legend-item.night .legend-color {
-  background-color: #00008B;
+  background-color: #00008b;
 }
 
 .legend-item.mixta .legend-color {
@@ -1564,7 +1578,7 @@ function hideGlobalTooltip() {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 2147483647;   /* literal techo */
+  z-index: 2147483647; /* literal techo */
   background: #111;
   color: #fff;
   padding: 8px 10px;
@@ -1572,11 +1586,11 @@ function hideGlobalTooltip() {
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
-  pointer-events: none;         /* no roba hover */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  pointer-events: none; /* no roba hover */
   opacity: 0;
-  transform: translate(-9999px,-9999px);
-  transition: opacity .12s ease;
+  transform: translate(-9999px, -9999px);
+  transition: opacity 0.12s ease;
 }
 
 #inst-global-tooltip.is-visible {
@@ -1589,11 +1603,13 @@ function hideGlobalTooltip() {
 #inst-global-tooltip .label {
   font-weight: 600;
   margin-right: 4px;
-  opacity: .9;
+  opacity: 0.9;
 }
 
 /* Por si imprimes PDF, que no salga */
 @media print {
-  #inst-global-tooltip { display: none !important; }
+  #inst-global-tooltip {
+    display: none !important;
+  }
 }
 </style>
