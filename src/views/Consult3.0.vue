@@ -1376,7 +1376,7 @@ function addColors() {
   visibility: hidden;
   transform: translateY(-4px);
   transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
-  pointer-events: none;         /* evita robos de hover */
+  pointer-events: none;       /* evita robos de hover */
 }
 
 /* flechita opcional */
