@@ -107,32 +107,7 @@
             </template>
           </q-select>
         </div>
-        <div class="col-11 col-sm-6 q-px-md" v-if="opcion == 'ambiente'">
-          <q-select
-            filled
-            :disable="isLoadingData"
-            v-model="environment"
-            label="Ambiente"
-            use-input
-            hide-selected
-            options-dense
-            fill-input
-            input-debounce="0"
-            :options="filterEnvironment"
-            @filter="filterEnvi"
-            lazy-rules
-            :rules="[(val) => !!val || 'El campo es requerido']"
-          >
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey"> No results </q-item-section>
-              </q-item>
-            </template>
-            <template v-slot:prepend>
-              <span class="material-symbols-outlined"> person </span>
-            </template>
-          </q-select>
-        </div>
+
         <div class="col-11 col-sm-6 q-px-md">
           <q-input
             filled
@@ -194,6 +169,9 @@
               class="bg-green-9 text-white"
             >
               REPORTE
+              <template v-slot:loading>
+                <q-spinner-oval color="white" size="1em" />
+              </template>
             </q-btn>
           </div>
         </div>
@@ -346,7 +324,7 @@
         </div>
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-10 q-pb-lg q-mt-md justify-center flex">
-            <FullCalendar id="calender" class="text-uppercase" :options="c">
+            <FullCalendar class="calender text-uppercase" :options="c">
               <template v-if="opcion == 'instructor'" v-slot:eventContent="arg">
                 <VMenu
                   :autoHide="false"
@@ -493,11 +471,11 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, computed, createApp, nextTick, watch } from 'vue';
+import { ref, onBeforeMount, nextTick, watch } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
-import { event, format, useQuasar } from 'quasar';
+import { useQuasar } from 'quasar';
 import { jsPDF } from 'jspdf';
 import { useRouter } from 'vue-router';
 import dataRedConocimiento from '../static/dataRedConocimiento.js';
@@ -510,14 +488,10 @@ import esLocale from '@fullcalendar/core/locales/es';
 
 import { storeUser } from '../store/users.js';
 import { storeEnv } from '../store/Environments.js';
-import { VTooltip } from 'floating-vue';
-import tableFormacion from '../components/Reports/tables/tableFormacion.vue';
-import tableOtrasActividades from '../components/Reports/tables/tableOtrasActividades.vue';
 import { excelToReports } from '../services/excelToReports.js';
 
 import BtnBack from '../layouts/btnBackLayout.vue';
 import HeaderLayout from '../layouts/headerViewsLayout.vue';
-import { symOutlinedAirlineSeatFlatAngled } from '@quasar/extras/material-symbols-outlined';
 
 const $q = useQuasar();
 
@@ -656,9 +630,9 @@ async function sendReport() {
     fiche.value = '';
     fStart.value = '';
     fEnd.value = '';
-    months.value = '';
-    yearsMonth.value = '';
-    eventsCalender.value = '';
+    months.value = [];
+    yearsMonth.value = [];
+    eventsCalender.value = {};
     calendarOptions.value = [];
     monthHours.value = {};
     existInfo.value = false;
@@ -761,56 +735,59 @@ async function getEnvironments() {
 }
 
 async function getReport() {
+  loadingData.value = true;
   resetReportData();
-  if (shape.value == 'area') {
-    console.log(copyFilterInst.value);
-    const list = copyFilterInst.value.map((i) => ({
-      id: i.value,
-      name: i.label,
-      color: generateColor(),
-    }));
 
-    console.log(list);
-    legendInstructors.value = list;
+  try {
+    if (shape.value == 'area') {
+      console.log(copyFilterInst.value);
+      const list = copyFilterInst.value.map((i) => ({
+        id: i.value,
+        name: i.label,
+        color: generateColor(),
+      }));
 
-    const { months: mm, yearsMonth: yymm } = computeMonthsYears(
-      fStart.value,
-      fEnd.value
-    );
-    months.value = mm;
-    yearsMonth.value = yymm;
+      console.log(list);
+      legendInstructors.value = list;
 
-    for (const prof of legendInstructors.value) {
-      try {
-        const res = await useStoreReport.generateReportByInstr(
-          {
-            instructor: prof.id,
-            fstart: fStart.value,
-            fend: fEnd.value,
-          },
-          false
-        );
+      const { months: mm, yearsMonth: yymm } = computeMonthsYears(
+        fStart.value,
+        fEnd.value
+      );
+      months.value = mm;
+      yearsMonth.value = yymm;
 
-        // cada profe tendrá su registro en un objeto
-        prof.events = [];
+      for (const prof of legendInstructors.value) {
+        try {
+          const res = await useStoreReport.generateReportByInstr(
+            {
+              instructor: prof.id,
+              fstart: fStart.value,
+              fend: fEnd.value,
+            },
+            false
+          );
 
-        if (res?.status <= 201 && res.data?.events) {
-          prof.events = res.data.events; // aquí te llega { "06": [...], "07": [...] }
+          // cada profe tendrá su registro en un objeto
+          prof.events = [];
+
+          if (res?.status <= 201 && res.data?.events) {
+            prof.events = res.data.events; // aquí te llega { "06": [...], "07": [...] }
+          }
+        } catch (e) {
+          // si falla, simplemente no tiene eventos
+          prof.events = [];
         }
-      } catch (e) {
-        // si falla, simplemente no tiene eventos
-        prof.events = [];
       }
-    }
-    generateCalendar();
-  } else {
-    let data = {
-      instructor: inst.value.value,
-      fstart: fStart.value,
-      fend: fEnd.value,
-    };
+      generateCalendar();
+    } else {
+      let data = {
+        instructor: inst.value.value,
+        fstart: fStart.value,
+        fend: fEnd.value,
+      };
 
-    await useStoreReport.generateReportByInstr(data).then((res) => {
+      const res = await useStoreReport.generateReportByInstr(data);
       console.log(res);
       if (res.status <= 201) {
         months.value = res.data.months;
@@ -822,9 +799,16 @@ async function getReport() {
         calculateMonthHours();
         generateCalendar();
       }
+    }
+  } catch (error) {
+    console.error(error);
+    $q.notify({
+      type: 'negative',
+      message: 'No fue posible generar el reporte. Intenta nuevamente.',
     });
+  } finally {
+    loadingData.value = false;
   }
-  loadingData.value = false;
 }
 
 async function exportCalender() {
@@ -989,8 +973,8 @@ function changeColor(event) {
     };
   } else if (shiftLower === 'jornada tarde') {
     return {
-      backgroundColor: '#FF8400',
-      borderColor: '#FF8400',
+      backgroundColor: '#35F527',
+      borderColor: '#35F527',
       textColor: '#FFFFFF',
     };
   } else if (shiftLower === 'jornada mixta') {
@@ -1072,7 +1056,7 @@ function generateDailyEvents(startDate, endDate) {
         observation: 'JORNADA TARDE',
         allDay: true,
         backgroundColor: '#ffffff',
-        borderColor: shape.value == 'area' ? '#FF8400' : '#929292',
+        borderColor: shape.value == 'area' ? '#0BF468' : '#929292',
         order: 2,
         className: 'jornada-tarde',
       },
@@ -1283,7 +1267,6 @@ function addColors() {
             container = document.createElement('div');
             container.className = 'inst-dot-container';
             target.style.position = 'relative';
-            target.style.overflow = 'visible';
             target.appendChild(container);
           }
 
@@ -1306,42 +1289,6 @@ function addColors() {
       });
     });
   });
-}
-
-function createInstructorTooltip(inst, event) {
-  const tooltip = document.createElement('div');
-  tooltip.className = 'content-tooltip-area';
-
-  const fallbackText = (value) => {
-    if (value === undefined || value === null) {
-      return 'No asignado';
-    }
-
-    const text = String(value).trim();
-    return text.length ? text : 'No asignado';
-  };
-
-  const rows = [
-    ['Instructor', inst?.name],
-    ['Ficha', event?.fiche],
-    ['Ambiente', event?.environment],
-  ];
-
-  rows.forEach(([label, value]) => {
-    const row = document.createElement('p');
-    row.className = 'content-tooltip-area__row';
-
-    const labelEl = document.createElement('span');
-    labelEl.className = 'content-tooltip-area__label';
-    labelEl.textContent = `${label}: `;
-
-    row.appendChild(labelEl);
-    row.appendChild(document.createTextNode(fallbackText(value)));
-
-    tooltip.appendChild(row);
-  });
-
-  return tooltip;
 }
 
 function ensureGlobalTooltip() {
@@ -1416,14 +1363,12 @@ function hideGlobalTooltip() {
 </script>
 
 <style>
-#calender {
+.calender {
   width: 1000px !important;
   height: 665px !important;
 }
 
 .inst-dot-container {
-  bottom: 4px;
-  left: 4px;
   display: flex;
   gap: 4px;
   padding: 4px 3px;
@@ -1431,50 +1376,10 @@ function hideGlobalTooltip() {
 
 /* el puntico */
 .inst-dot {
-  width: 10px;
-  height: 10px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   /* para posicionar el tooltip respecto al punto */
-}
-
-/* ocultar tooltip por defecto */
-.tooltip-area .content-tooltip-area {
-  position: absolute;
-  top: -6px; /* ajusta a gusto */
-  left: 12px; /* separadito del punto */
-  background: #111;
-  color: #fff;
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  line-height: 1.2;
-  white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity 0.15s ease, transform 0.15s ease,
-    visibility 0s linear 0.15s;
-  pointer-events: none; /* evita robos de hover */
-}
-
-/* flechita opcional */
-.tooltip-area .content-tooltip-area::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: -6px;
-  border-width: 6px;
-  border-style: solid;
-  border-color: transparent #111 transparent transparent;
-}
-
-/* mostrar al pasar el mouse por el puntico */
-.tooltip-area:hover .content-tooltip-area {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition-delay: 0s;
 }
 
 /* por si FullCalendar intenta recortar el contenido del día */
@@ -1510,7 +1415,7 @@ function hideGlobalTooltip() {
 }
 
 .legend-item.afternoon .legend-color {
-  background-color: #ff8400;
+  background-color: #35F527;
 }
 
 .legend-item.night .legend-color {
