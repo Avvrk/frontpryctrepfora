@@ -325,7 +325,48 @@
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-10 q-pb-lg q-mt-md justify-center flex">
             <FullCalendar class="calender text-uppercase" :options="c">
-              <template v-if="opcion == 'instructor'" v-slot:eventContent="arg">
+              <template v-if="shape === 'area'" v-slot:eventContent="arg">
+                <div
+                  class="area-event"
+                  :class="[`area-event--${arg.event.extendedProps.shiftKey || 'unknown'}`]"
+                >
+                  <span class="area-event__label">
+                    {{ shiftLabels[arg.event.extendedProps.shiftKey] || 'Turno' }}
+                  </span>
+                  <div
+                    v-if="arg.event.extendedProps.areaItems.length"
+                    class="area-event__dots"
+                  >
+                    <span
+                      v-for="slot in arg.event.extendedProps.areaItems"
+                      :key="slot.slotKey"
+                      class="area-event__dot"
+                      :style="{ backgroundColor: slot.color }"
+                    >
+                      <q-tooltip
+                        class="area-event__tooltip"
+                        anchor="top middle"
+                        self="bottom middle"
+                        :offset="[0, 8]"
+                      >
+                        <div
+                          v-for="field in areaTooltipFields"
+                          :key="field.key"
+                          v-if="field.always || slot[field.key]"
+                          class="area-event__tooltip-row"
+                        >
+                          <span class="area-event__tooltip-label"
+                            >{{ field.label }}:</span
+                          >
+                          <span>{{ fallbackText(slot[field.key]) }}</span>
+                        </div>
+                      </q-tooltip>
+                    </span>
+                  </div>
+                  <span v-else class="area-event__empty">Sin asignación</span>
+                </div>
+              </template>
+              <template v-else-if="opcion == 'instructor'" v-slot:eventContent="arg">
                 <VMenu
                   :autoHide="false"
                   :delay="0"
@@ -471,7 +512,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, nextTick, watch } from 'vue';
+import { ref, onBeforeMount, watch, computed } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -509,6 +550,38 @@ const shiftRanges = {
   afternoon: '12:30 PM - 6:30 PM',
   night: '6:30 PM - 11:30 PM',
 };
+
+const shiftLabels = {
+  morning: 'Mañana',
+  afternoon: 'Tarde',
+  night: 'Noche',
+};
+
+const SHIFT_CLASS_TO_KEY = {
+  'jornada-mañana': 'morning',
+  'jornada-tarde': 'afternoon',
+  'jornada-noche': 'night',
+};
+
+const SHIFT_OBSERVATION_TO_KEY = {
+  'jornada mañana': 'morning',
+  'jornada tarde': 'afternoon',
+  'jornada noche': 'night',
+};
+
+const areaTooltipFields = [
+  { key: 'instructor', label: 'Instructor', always: true },
+  { key: 'fiche', label: 'Ficha', always: true },
+  { key: 'environment', label: 'Ambiente', always: true },
+  { key: 'program', label: 'Programa' },
+  { key: 'outcome', label: 'Resultado' },
+  { key: 'supporttext', label: 'Nota' },
+  { key: 'additionalactivity', label: 'Actividad adicional' },
+  { key: 'justification', label: 'Justificación' },
+  { key: 'observation', label: 'Observación' },
+  { key: 'tstart', label: 'Inicio', always: true },
+  { key: 'tend', label: 'Fin', always: true },
+];
 let legendInstructors = ref([]); // contiene los instructores con sus colores para el legend
 let fiche = ref();
 let inst = ref();
@@ -543,6 +616,120 @@ let print = ref(false);
 let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
+
+const fallbackText = (value) => {
+  if (value === undefined || value === null) {
+    return 'No asignado';
+  }
+
+  const asString = String(value).trim();
+  return asString.length ? asString : 'No asignado';
+};
+
+const normalizeDateKey = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('sv-SE');
+  }
+
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  return null;
+};
+
+function getShiftKeyFromEvent(event) {
+  if (!event) {
+    return null;
+  }
+
+  const observationKey = SHIFT_OBSERVATION_TO_KEY[
+    (event.observation || '').toLowerCase()
+  ];
+
+  if (observationKey) {
+    return observationKey;
+  }
+
+  const classKey = SHIFT_CLASS_TO_KEY[shiftClassByTime(event.tstart)];
+  return classKey || null;
+}
+
+const areaDailySlots = computed(() => {
+  if (shape.value !== 'area') {
+    return {};
+  }
+
+  const slots = {};
+
+  const ensureDay = (dayKey) => {
+    if (!slots[dayKey]) {
+      slots[dayKey] = {
+        morning: [],
+        afternoon: [],
+        night: [],
+      };
+    }
+
+    return slots[dayKey];
+  };
+
+  legendInstructors.value.forEach((instructor) => {
+    const monthlyEvents = instructor?.events || {};
+
+    Object.values(monthlyEvents).forEach((monthEvents) => {
+      const entries = Array.isArray(monthEvents)
+        ? monthEvents
+        : monthEvents
+        ? [monthEvents]
+        : [];
+
+      entries.forEach((event) => {
+        const dayKey = normalizeDateKey(event?.start);
+        if (!dayKey) {
+          return;
+        }
+
+        const shiftKey = getShiftKeyFromEvent(event);
+        if (!shiftKey) {
+          return;
+        }
+
+        const daySlots = ensureDay(dayKey);
+
+        const baseKeyParts = [
+          instructor.id,
+          event?.start,
+          event?.tstart,
+          event?.tend,
+          event?.fiche,
+          event?.environment,
+        ].filter(Boolean);
+
+        const slotKey =
+          baseKeyParts.join('|') ||
+          `${instructor.id}-${dayKey}-${shiftKey}-${daySlots[shiftKey].length}`;
+
+        const { color: _ignoredColor, ...eventInfo } = event || {};
+
+        daySlots[shiftKey].push({
+          ...eventInfo,
+          instructor: instructor.name,
+          instructorId: instructor.id,
+          color: instructor.color,
+          slotKey,
+        });
+      });
+    });
+  });
+
+  return slots;
+});
 
 const resetReportData = () => {
   calendarOptions.value = [];
@@ -693,7 +880,6 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
-      eventDidMount: addColors,
     });
   });
 
@@ -975,7 +1161,7 @@ function changeColor(event) {
     return {
       backgroundColor: '#35F527',
       borderColor: '#35F527',
-      textColor: '#FFFFFF',
+      textColor: '#000000',
     };
   } else if (shiftLower === 'jornada mixta') {
     return {
@@ -1195,6 +1381,25 @@ function generateMonthEvents(my) {
     }
   });
 
+  if (shape.value === 'area') {
+    return events.map((event) => {
+      const dayKey = normalizeDateKey(event.start);
+      const shiftKey = getShiftKeyFromEvent(event);
+      const daySlots = dayKey ? areaDailySlots.value[dayKey] : null;
+      const areaItems =
+        daySlots && shiftKey ? daySlots[shiftKey] || [] : [];
+
+      return {
+        ...event,
+        extendedProps: {
+          ...(event.extendedProps || {}),
+          shiftKey,
+          areaItems,
+        },
+      };
+    });
+  }
+
   return events;
 }
 
@@ -1206,160 +1411,6 @@ function shiftClassByTime(time) {
   return null;
 }
 
-function addColors() {
-  nextTick(() => {
-    // eliminar indicadores anteriores para evitar duplicados al navegar
-    document.querySelectorAll('.inst-dot-container').forEach((el) => {
-      const parent = el.parentElement;
-      if (parent?.dataset?.instDotsPrepared) {
-        delete parent.dataset.instDotsPrepared;
-      }
-      el.remove();
-    });
-
-    document.querySelectorAll('.fc-daygrid-day').forEach((dayEl) => {
-      const dateStr = dayEl.getAttribute('data-date');
-      if (!dateStr) return;
-
-      const [, month] = dateStr.split('-');
-
-      legendInstructors.value.forEach((inst) => {
-        const monthEvents = inst.events?.[month] || [];
-        const dayEvents = Array.isArray(monthEvents)
-          ? monthEvents.filter((ev) => ev.start === dateStr)
-          : monthEvents?.start === dateStr
-          ? [monthEvents]
-          : [];
-
-        if (!dayEvents.length) {
-          return;
-        }
-
-        const eventsByShift = dayEvents.reduce((acc, ev) => {
-          const cls = shiftClassByTime(ev.tstart);
-          if (!cls) {
-            return acc;
-          }
-
-          if (!acc.has(cls)) {
-            acc.set(cls, []);
-          }
-
-          acc.get(cls).push(ev);
-          return acc;
-        }, new Map());
-
-        eventsByShift.forEach((shiftEvents, cls) => {
-          const target = dayEl.querySelector(`.${cls}`);
-          if (!target) {
-            return;
-          }
-
-          if (!target.dataset.instDotsPrepared) {
-            while (target.firstChild) {
-              target.removeChild(target.firstChild);
-            }
-            target.dataset.instDotsPrepared = 'true';
-          }
-
-          let container = target.querySelector('.inst-dot-container');
-          if (!container) {
-            container = document.createElement('div');
-            container.className = 'inst-dot-container';
-            target.style.position = 'relative';
-            target.appendChild(container);
-          }
-
-          const dot = document.createElement('span');
-          dot.className = 'inst-dot tooltip-area';
-          dot.style.backgroundColor = inst.color;
-
-          const [event] = shiftEvents;
-          if (event) {
-            const html = buildTooltipHTML(inst, event);
-            dot.addEventListener('mouseenter', (ev) =>
-              showGlobalTooltip(html, ev)
-            );
-            dot.addEventListener('mousemove', (ev) => moveGlobalTooltip(ev));
-            dot.addEventListener('mouseleave', hideGlobalTooltip);
-          }
-
-          container.appendChild(dot);
-        });
-      });
-    });
-  });
-}
-
-function ensureGlobalTooltip() {
-  let el = document.getElementById('inst-global-tooltip');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'inst-global-tooltip';
-    document.body.appendChild(el);
-  }
-  return el;
-}
-
-function buildTooltipHTML(inst, event) {
-  const fallback = (v) => {
-    if (v === undefined || v === null) return 'No asignado';
-    const s = String(v).trim();
-    return s.length ? s : 'No asignado';
-  };
-
-  return `
-    <div class="row"><span class="label">Instructor:</span>${fallback(
-      inst?.name
-    )}</div>
-    <div class="row"><span class="label">Ficha:</span>${fallback(
-      event?.fiche
-    )}</div>
-    <div class="row"><span class="label">Ambiente:</span>${fallback(
-      event?.environment
-    )}</div>
-  `;
-}
-
-const GLOBAL_OFFSET = { x: 12, y: 8 };
-
-function positionTooltipNear(ev) {
-  const tip = ensureGlobalTooltip();
-  const vpW = window.innerWidth,
-    vpH = window.innerHeight;
-  const rectX = (ev.clientX ?? 0) + GLOBAL_OFFSET.x;
-  const rectY = (ev.clientY ?? 0) + GLOBAL_OFFSET.y;
-
-  // mide el tamaño actual
-  tip.style.transform = 'translate(-9999px,-9999px)';
-  tip.classList.add('is-visible');
-  const { width, height } = tip.getBoundingClientRect();
-
-  // evita salirte de la pantalla
-  let x = rectX;
-  let y = rectY;
-  if (x + width + 8 > vpW) x = Math.max(8, vpW - width - 8);
-  if (y + height + 8 > vpH) y = Math.max(8, vpH - height - 8);
-
-  tip.style.transform = `translate(${x}px, ${y}px)`;
-}
-
-function showGlobalTooltip(html, ev) {
-  const tip = ensureGlobalTooltip();
-  tip.innerHTML = html;
-  tip.classList.add('is-visible');
-  positionTooltipNear(ev);
-}
-
-function moveGlobalTooltip(ev) {
-  positionTooltipNear(ev);
-}
-
-function hideGlobalTooltip() {
-  const tip = ensureGlobalTooltip();
-  tip.classList.remove('is-visible');
-  tip.style.transform = 'translate(-9999px,-9999px)';
-}
 </script>
 
 <style>
@@ -1368,18 +1419,70 @@ function hideGlobalTooltip() {
   height: 665px !important;
 }
 
-.inst-dot-container {
+.area-event {
+  width: 100%;
   display: flex;
-  gap: 4px;
-  padding: 4px 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 2px 4px;
 }
 
-/* el puntico */
-.inst-dot {
-  width: 15px;
-  height: 15px;
+.area-event__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #1f1f1f;
+}
+
+.area-event__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.area-event__dot {
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  /* para posicionar el tooltip respecto al punto */
+  display: inline-flex;
+}
+
+.area-event__empty {
+  font-size: 10px;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.area-event__tooltip {
+  font-size: 11px;
+  line-height: 1.3;
+  text-transform: none;
+}
+
+.area-event__tooltip-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.area-event__tooltip-label {
+  font-weight: 600;
+}
+
+.area-event--morning .area-event__label {
+  color: #d19b00;
+}
+
+.area-event--afternoon .area-event__label {
+  color: #0c8c3a;
+}
+
+.area-event--night .area-event__label {
+  color: #002885;
 }
 
 /* por si FullCalendar intenta recortar el contenido del día */
@@ -1478,43 +1581,4 @@ function hideGlobalTooltip() {
   margin-top: 30px;
 }
 
-/* Tooltip global que vive en <body> */
-#inst-global-tooltip {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 2147483647; /* literal techo */
-  background: #111;
-  color: #fff;
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  line-height: 1.2;
-  white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  pointer-events: none; /* no roba hover */
-  opacity: 0;
-  transform: translate(-9999px, -9999px);
-  transition: opacity 0.12s ease;
-}
-
-#inst-global-tooltip.is-visible {
-  opacity: 1;
-}
-
-#inst-global-tooltip .row {
-  margin: 2px 0;
-}
-#inst-global-tooltip .label {
-  font-weight: 600;
-  margin-right: 4px;
-  opacity: 0.9;
-}
-
-/* Por si imprimes PDF, que no salga */
-@media print {
-  #inst-global-tooltip {
-    display: none !important;
-  }
-}
 </style>
