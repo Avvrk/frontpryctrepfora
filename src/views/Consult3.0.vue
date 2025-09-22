@@ -331,12 +331,35 @@
                     v-if="arg.event.extendedProps.areaItems.length"
                     class="area-event__dots"
                   >
-                    <span
+                    <VMenu
                       v-for="slot in arg.event.extendedProps.areaItems"
                       :key="slot.slotKey"
-                      class="area-event__dot"
-                      :style="{ backgroundColor: slot.color }"
-                    ></span>
+                      :autoHide="false"
+                      :delay="0"
+                      class="area-event__menu"
+                    >
+                      <span
+                        class="area-event__dot"
+                        :style="{ backgroundColor: slot.color }"
+                      ></span>
+
+                      <template #popper>
+                        <div class="content-tooltip-event">
+                          <p>
+                            INSTRUCTOR:
+                            {{ getAreaTooltipText(slot.instructor, 'Sin instructor') }}
+                          </p>
+                          <p>
+                            FICHA:
+                            {{ getAreaTooltipText(slot.fiche, 'Sin ficha') }}
+                          </p>
+                          <p>
+                            AMBIENTE:
+                            {{ getAreaTooltipText(slot.environment, 'Sin ambiente') }}
+                          </p>
+                        </div>
+                      </template>
+                    </VMenu>
                   </div>
                 </div>
               </template>
@@ -574,6 +597,55 @@ let print = ref(false);
 let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
+
+const getAreaTooltipText = (value, fallback) => {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : fallback;
+  }
+
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
+  if (typeof value === 'object') {
+    const candidates = [
+      value?.name,
+      value?.label,
+      value?.code,
+      value?.number,
+      value?.title,
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined) {
+        continue;
+      }
+
+      if (typeof candidate === 'string') {
+        const trimmedCandidate = candidate.trim();
+        if (trimmedCandidate.length) {
+          return trimmedCandidate;
+        }
+      } else if (typeof candidate === 'number') {
+        return String(candidate);
+      }
+    }
+  }
+
+  const stringified = String(value);
+  const trimmedString = stringified.trim();
+
+  if (!trimmedString || trimmedString === '[object Object]') {
+    return fallback;
+  }
+
+  return trimmedString;
+};
 
 const normalizeDateKey = (value) => {
   if (!value) {
@@ -1382,11 +1454,16 @@ function shiftClassByTime(time) {
   justify-content: center;
 }
 
+.area-event__menu {
+  display: inline-flex;
+}
+
 .area-event__dot {
   width: 16px;
   height: 16px;
   border-radius: 50%;
   display: inline-flex;
+  cursor: pointer;
 }
 
 /* por si FullCalendar intenta recortar el contenido del día */
