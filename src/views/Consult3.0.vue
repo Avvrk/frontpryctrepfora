@@ -326,13 +326,7 @@
           <div class="col-10 q-pb-lg q-mt-md justify-center flex">
             <FullCalendar class="calender text-uppercase" :options="c">
               <template v-if="shape === 'area'" v-slot:eventContent="arg">
-                <div
-                  class="area-event"
-                  :class="[`area-event--${arg.event.extendedProps.shiftKey || 'unknown'}`]"
-                >
-                  <span class="area-event__label">
-                    {{ shiftLabels[arg.event.extendedProps.shiftKey] || 'Turno' }}
-                  </span>
+                <div class="area-event">
                   <div
                     v-if="arg.event.extendedProps.areaItems.length"
                     class="area-event__dots"
@@ -363,10 +357,12 @@
                       </q-tooltip>
                     </span>
                   </div>
-                  <span v-else class="area-event__empty">Sin asignación</span>
                 </div>
               </template>
-              <template v-else-if="opcion == 'instructor'" v-slot:eventContent="arg">
+              <template
+                v-else-if="opcion == 'instructor'"
+                v-slot:eventContent="arg"
+              >
                 <VMenu
                   :autoHide="false"
                   :delay="0"
@@ -551,12 +547,6 @@ const shiftRanges = {
   night: '6:30 PM - 11:30 PM',
 };
 
-const shiftLabels = {
-  morning: 'Mañana',
-  afternoon: 'Tarde',
-  night: 'Noche',
-};
-
 const SHIFT_CLASS_TO_KEY = {
   'jornada-mañana': 'morning',
   'jornada-tarde': 'afternoon',
@@ -648,9 +638,8 @@ function getShiftKeyFromEvent(event) {
     return null;
   }
 
-  const observationKey = SHIFT_OBSERVATION_TO_KEY[
-    (event.observation || '').toLowerCase()
-  ];
+  const observationKey =
+    SHIFT_OBSERVATION_TO_KEY[(event.observation || '').toLowerCase()];
 
   if (observationKey) {
     return observationKey;
@@ -1386,8 +1375,7 @@ function generateMonthEvents(my) {
       const dayKey = normalizeDateKey(event.start);
       const shiftKey = getShiftKeyFromEvent(event);
       const daySlots = dayKey ? areaDailySlots.value[dayKey] : null;
-      const areaItems =
-        daySlots && shiftKey ? daySlots[shiftKey] || [] : [];
+      const areaItems = daySlots && shiftKey ? daySlots[shiftKey] || [] : [];
 
       return {
         ...event,
@@ -1410,7 +1398,6 @@ function shiftClassByTime(time) {
   if (minutes >= 1110 && minutes < 1410) return 'jornada-noche';
   return null;
 }
-
 </script>
 
 <style>
@@ -1421,39 +1408,26 @@ function shiftClassByTime(time) {
 
 .area-event {
   width: 100%;
+  min-height: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  justify-content: start;
   flex-wrap: wrap;
   padding: 2px 4px;
-}
-
-.area-event__label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #1f1f1f;
 }
 
 .area-event__dots {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .area-event__dot {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   display: inline-flex;
-}
-
-.area-event__empty {
-  font-size: 10px;
-  color: #9ca3af;
-  text-transform: uppercase;
 }
 
 .area-event__tooltip {
@@ -1471,18 +1445,6 @@ function shiftClassByTime(time) {
 
 .area-event__tooltip-label {
   font-weight: 600;
-}
-
-.area-event--morning .area-event__label {
-  color: #d19b00;
-}
-
-.area-event--afternoon .area-event__label {
-  color: #0c8c3a;
-}
-
-.area-event--night .area-event__label {
-  color: #002885;
 }
 
 /* por si FullCalendar intenta recortar el contenido del día */
@@ -1518,7 +1480,7 @@ function shiftClassByTime(time) {
 }
 
 .legend-item.afternoon .legend-color {
-  background-color: #35F527;
+  background-color: #35f527;
 }
 
 .legend-item.night .legend-color {
@@ -1580,5 +1542,4 @@ function shiftClassByTime(time) {
   transform: translate(-50%);
   margin-top: 30px;
 }
-
 </style>
