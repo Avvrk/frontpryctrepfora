@@ -336,26 +336,7 @@
                       :key="slot.slotKey"
                       class="area-event__dot"
                       :style="{ backgroundColor: slot.color }"
-                    >
-                      <q-tooltip
-                        class="area-event__tooltip"
-                        anchor="top middle"
-                        self="bottom middle"
-                        :offset="[0, 8]"
-                      >
-                        <div
-                          v-for="field in areaTooltipFields"
-                          :key="field.key"
-                          v-if="field.always || slot[field.key]"
-                          class="area-event__tooltip-row"
-                        >
-                          <span class="area-event__tooltip-label"
-                            >{{ field.label }}:</span
-                          >
-                          <span>{{ fallbackText(slot[field.key]) }}</span>
-                        </div>
-                      </q-tooltip>
-                    </span>
+                    ></span>
                   </div>
                 </div>
               </template>
@@ -559,19 +540,6 @@ const SHIFT_OBSERVATION_TO_KEY = {
   'jornada noche': 'night',
 };
 
-const areaTooltipFields = [
-  { key: 'instructor', label: 'Instructor', always: true },
-  { key: 'fiche', label: 'Ficha', always: true },
-  { key: 'environment', label: 'Ambiente', always: true },
-  { key: 'program', label: 'Programa' },
-  { key: 'outcome', label: 'Resultado' },
-  { key: 'supporttext', label: 'Nota' },
-  { key: 'additionalactivity', label: 'Actividad adicional' },
-  { key: 'justification', label: 'Justificación' },
-  { key: 'observation', label: 'Observación' },
-  { key: 'tstart', label: 'Inicio', always: true },
-  { key: 'tend', label: 'Fin', always: true },
-];
 let legendInstructors = ref([]); // contiene los instructores con sus colores para el legend
 let fiche = ref();
 let inst = ref();
@@ -606,15 +574,6 @@ let print = ref(false);
 let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
-
-const fallbackText = (value) => {
-  if (value === undefined || value === null) {
-    return 'No asignado';
-  }
-
-  const asString = String(value).trim();
-  return asString.length ? asString : 'No asignado';
-};
 
 const normalizeDateKey = (value) => {
   if (!value) {
@@ -1428,23 +1387,6 @@ function shiftClassByTime(time) {
   height: 16px;
   border-radius: 50%;
   display: inline-flex;
-}
-
-.area-event__tooltip {
-  font-size: 11px;
-  line-height: 1.3;
-  text-transform: none;
-}
-
-.area-event__tooltip-row {
-  display: flex;
-  gap: 6px;
-  align-items: baseline;
-  white-space: nowrap;
-}
-
-.area-event__tooltip-label {
-  font-weight: 600;
 }
 
 /* por si FullCalendar intenta recortar el contenido del día */
