@@ -252,23 +252,49 @@
         </div>
       </div>
       <div class="te" v-if="shape === 'area' && existInfo">
+        <div class="legend-toolbar">
+          <q-btn
+            label="Programar"
+            color="primary"
+            size="sm"
+            :outline="!programmingMode"
+            :unelevated="programmingMode"
+            :disable="legendInstructors.length === 0"
+            @click="toggleProgrammingMode"
+          />
+        </div>
         <!-- <p>q-mt-md q-mb-lg flex items-center justify-center gap-3</p> -->
         <div
           v-for="p in legendInstructors"
           :key="p.id"
-          class="flex items-center q-mr-md to"
+          class="flex items-center q-mr-md to legend-entry"
         >
-          <span
-            :style="{
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              display: 'inline-block',
-              background: p.color,
-              marginRight: '6px',
-            }"
-          ></span>
-          <span class="text-caption">{{ p.name }}</span>
+          <template v-if="programmingMode">
+            <label class="legend-radio">
+              <input
+                class="legend-radio__input"
+                type="radio"
+                :value="p.id"
+                v-model="selectedInstructorId"
+              />
+              <span
+                class="legend-radio__dot"
+                :style="{
+                  borderColor: p.color,
+                  backgroundColor:
+                    selectedInstructorId === p.id ? p.color : 'transparent',
+                }"
+              ></span>
+              <span class="legend-radio__label">{{ p.name }}</span>
+            </label>
+          </template>
+          <template v-else>
+            <span
+              class="legend-color-dot"
+              :style="{ background: p.color }"
+            ></span>
+            <span class="text-caption">{{ p.name }}</span>
+          </template>
         </div>
       </div>
       <div
@@ -347,7 +373,12 @@
                         <div class="content-tooltip-event">
                           <p>
                             INSTRUCTOR:
-                            {{ getAreaTooltipText(slot.instructor, 'Sin instructor') }}
+                            {{
+                              getAreaTooltipText(
+                                slot.instructor,
+                                'Sin instructor'
+                              )
+                            }}
                           </p>
                           <p>
                             FICHA:
@@ -355,7 +386,12 @@
                           </p>
                           <p>
                             AMBIENTE:
-                            {{ getAreaTooltipText(slot.environment, 'Sin ambiente') }}
+                            {{
+                              getAreaTooltipText(
+                                slot.environment,
+                                'Sin ambiente'
+                              )
+                            }}
                           </p>
                         </div>
                       </template>
@@ -551,6 +587,45 @@ const shiftRanges = {
   night: '6:30 PM - 11:30 PM',
 };
 
+const COLOR_PALETTE = [
+  '#F94144',
+  '#F3722C',
+  '#F8961E',
+  '#F9844A',
+  '#F9C74F',
+  '#90BE6D',
+  '#43AA8B',
+  '#577590',
+  '#277DA1',
+  '#4D908E',
+  '#B5838D',
+  '#6D597A',
+  '#FF6B6B',
+  '#FFD166',
+  '#06D6A0',
+  '#118AB2',
+  '#073B4C',
+  '#8338EC',
+  '#FB5607',
+  '#FFBE0B',
+  '#3A86FF',
+  '#FF006E',
+  '#2A9D8F',
+  '#E9C46A',
+  '#F4A261',
+  '#E76F51',
+  '#9E0059',
+  '#4CC9F0',
+  '#4361EE',
+  '#480CA8',
+];
+
+let availableColors = [...COLOR_PALETTE];
+
+const resetAvailableColors = () => {
+  availableColors = [...COLOR_PALETTE];
+};
+
 const SHIFT_CLASS_TO_KEY = {
   'jornada-mañana': 'morning',
   'jornada-tarde': 'afternoon',
@@ -597,6 +672,8 @@ let print = ref(false);
 let optionsKnowledge = ref([...dataRedConocimiento]);
 let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
+let programmingMode = ref(false);
+let selectedInstructorId = ref(null);
 
 const getAreaTooltipText = (value, fallback) => {
   if (value === null || value === undefined) {
@@ -686,6 +763,10 @@ const areaDailySlots = computed(() => {
   }
 
   const slots = {};
+  const activeInstructorId =
+    programmingMode.value && selectedInstructorId.value
+      ? selectedInstructorId.value
+      : null;
 
   const ensureDay = (dayKey) => {
     if (!slots[dayKey]) {
@@ -700,6 +781,10 @@ const areaDailySlots = computed(() => {
   };
 
   legendInstructors.value.forEach((instructor) => {
+    if (activeInstructorId && instructor.id !== activeInstructorId) {
+      return;
+    }
+
     const monthlyEvents = instructor?.events || {};
 
     Object.values(monthlyEvents).forEach((monthEvents) => {
@@ -756,6 +841,7 @@ const resetReportData = () => {
   eventsCalender.value = {};
   existInfo.value = false;
   legendInstructors.value = [];
+  resetAvailableColors();
   monthHours.value = {};
   months.value = [];
   yearsMonth.value = [];
@@ -766,6 +852,8 @@ const resetReportData = () => {
   hoursWork2.value = 0;
   showCalender.value = true;
   print.value = false;
+  programmingMode.value = false;
+  selectedInstructorId.value = null;
 };
 
 const clearDataCalender = () => {
@@ -776,6 +864,35 @@ watch(
   shape,
   () => {
     resetReportData();
+  },
+  { flush: 'post' }
+);
+
+watch(
+  () => legendInstructors.value,
+  (list) => {
+    if (
+      selectedInstructorId.value &&
+      (!Array.isArray(list) ||
+        !list.some(
+          (instructor) => instructor.id === selectedInstructorId.value
+        ))
+    ) {
+      selectedInstructorId.value = null;
+    }
+  },
+  { deep: true }
+);
+
+watch(
+  [() => programmingMode.value, () => selectedInstructorId.value],
+  () => {
+    const hasMonths =
+      Array.isArray(yearsMonth.value) && yearsMonth.value.length > 0;
+
+    if (shape.value === 'area' && existInfo.value && hasMonths) {
+      generateCalendar();
+    }
   },
   { flush: 'post' }
 );
@@ -801,6 +918,14 @@ onBeforeMount(async () => {
     isLoadingData.value = false;
   }
 });
+
+function toggleProgrammingMode() {
+  programmingMode.value = !programmingMode.value;
+
+  if (!programmingMode.value) {
+    selectedInstructorId.value = null;
+  }
+}
 
 function cancel() {
   resetReportData();
@@ -1285,11 +1410,15 @@ function generateDailyEvents(startDate, endDate) {
 
 // Devuelve un color hexadecimal aleatorio para diferenciar eventos.
 function generateColor() {
-  const letter = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letter[Math.floor(Math.random() * 16)];
+  if (!availableColors.length) {
+    console.warn(
+      '[Consult3.0] Se agotaron los colores disponibles en la paleta definida.'
+    );
+    return null;
   }
+
+  const randomIndex = Math.floor(Math.random() * availableColors.length);
+  const [color] = availableColors.splice(randomIndex, 1);
   return color;
 }
 
@@ -1560,5 +1689,59 @@ function shiftClassByTime(time) {
   left: 50%;
   transform: translate(-50%);
   margin-top: 30px;
+}
+
+.legend-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.legend-entry {
+  align-items: center;
+}
+
+.legend-color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.legend-radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  width: 100%;
+  position: relative;
+}
+
+.legend-radio__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.legend-radio__dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #000;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.legend-radio__input:focus-visible + .legend-radio__dot {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.legend-radio__label {
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 </style>
