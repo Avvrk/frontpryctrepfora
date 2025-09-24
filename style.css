@@ -136,6 +136,16 @@
   background-color: #fffadf;
 }
 
+.content-tooltip-event1 {
+  padding: 6px 12px;
+  width: 220px;
+  overflow: hidden;
+  font-size: 12px;
+  height: auto;
+  overflow-y: auto;
+  background-color: #fffadf;
+}
+
 .fc-daygrid-event {
   overflow: visible;
 }

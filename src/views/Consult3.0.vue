@@ -17,7 +17,7 @@
           <q-radio v-model="shape" val="instructor" label="Por Instructor" />
           <q-radio v-model="shape" val="area" label="Por Area" />
         </div>
-        <div class="col-11 col-sm-6 q-px-md" v-if="opcion == 'instructor'">
+        <div class="col-11 col-sm-6 q-px-md">
           <q-select
             filled
             type="text"
@@ -364,13 +364,14 @@
                       :delay="0"
                       class="area-event__menu"
                     >
+                    
                       <span
                         class="area-event__dot"
                         :style="{ backgroundColor: slot.color }"
-                      ></span>
+                      >{{ slot.instructor.charAt(0).toUpperCase() }}</span>
 
                       <template #popper>
-                        <div class="content-tooltip-event">
+                        <div class="content-tooltip-event1">
                           <p>
                             INSTRUCTOR:
                             {{
@@ -403,43 +404,11 @@
                 v-else-if="opcion == 'instructor'"
                 v-slot:eventContent="arg"
               >
-                <VMenu
-                  :autoHide="false"
-                  :delay="0"
-                  class="justify-center items-center customEvents"
-                  v-if="arg.event.extendedProps.type == 1"
-                >
-                  <span>
-                    <b>{{ arg.timeText }}</b>
-                    <i>{{ arg.event.title }}</i></span
-                  >
-
-                  <template #popper>
-                    <div class="content-tooltip-event">
-                      <p>INSTRUCTOR: {{ arg.event.title }}</p>
-                      <p>
-                        ACTIVIDAD: {{ arg.event.extendedProps.typeactivity }}
-                      </p>
-                      <p>
-                        ACTIVIDAD ADICIONAL:{{
-                          arg.event.extendedProps.additionalactivity
-                        }}
-                      </p>
-                      <p>
-                        JUSTIFICACIÓN:
-                        {{ arg.event.extendedProps.justification }}
-                      </p>
-                      <p>HORA INICIO: {{ arg.event.extendedProps.tstart }}</p>
-                      <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
-                    </div>
-                  </template>
-                </VMenu>
 
                 <VMenu
                   :autoHide="false"
                   :delay="0"
                   class="justify-center items-center customEvents"
-                  v-else
                 >
                   <span>
                     <b>{{ arg.timeText }}</b>
@@ -462,33 +431,7 @@
                   </template>
                 </VMenu>
               </template>
-              <template v-else-if="opcion == 'ficha'" v-slot:eventContent="arg">
-                <VMenu
-                  :autoHide="false"
-                  :delay="0"
-                  class="justify-center items-center customEvents"
-                >
-                  <span>
-                    <b>{{ arg.timeText }}</b>
-                    <i>{{ arg.event.title }}</i></span
-                  >
-
-                  <template #popper>
-                    <div class="content-tooltip-event">
-                      <p>INSTRUCTOR: {{ arg.event.title }}</p>
-                      <p>AMBIENTE: {{ arg.event.extendedProps.environment }}</p>
-                      <p>PROGRAMA: {{ arg.event.extendedProps.program }}</p>
-                      <p>RESULTADO: {{ arg.event.extendedProps.outcome }}</p>
-                      <p>NOTA: {{ arg.event.extendedProps.supporttext }}</p>
-                      <p>
-                        OBSERVACIÓN: {{ arg.event.extendedProps.observation }}
-                      </p>
-                      <p>HORA INICIO: {{ arg.event.extendedProps.tstart }}</p>
-                      <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
-                    </div>
-                  </template>
-                </VMenu>
-              </template>
+              
               <template v-else v-slot:eventContent="arg">
                 <VMenu
                   :autoHide="false"
@@ -525,24 +468,6 @@
           </div>
         </div>
       </div>
-
-      <!-- <div
-        class="q-mb-md row"
-        style="display: grid; justify-content: center"
-        v-if="existInfo"
-      >
-        <tableFormacion
-          :events="eventsCalender"
-          :existInfo="existInfo"
-          :print="print"
-        />
-
-        <tableOtrasActividades
-          :events="eventsCalender"
-          :existInfo="existInfo"
-          :print="print"
-        />
-      </div> -->
     </div>
   </div>
 </template>
@@ -1068,10 +993,10 @@ async function getEnvironments() {
 async function getReport() {
   loadingData.value = true;
   resetReportData();
-
+  console.log(copyFilterInst.value);
+  
   try {
     if (shape.value == 'area') {
-      console.log(copyFilterInst.value);
       const list = copyFilterInst.value.map((i) => ({
         id: i.value,
         name: i.label,
@@ -1080,6 +1005,8 @@ async function getReport() {
 
       console.log(list);
       legendInstructors.value = list;
+      console.log(legendInstructors.value);
+      
 
       const { months: mm, yearsMonth: yymm } = computeMonthsYears(
         fStart.value,
@@ -1098,7 +1025,8 @@ async function getReport() {
             },
             false
           );
-
+            console.log(res);
+            
           // cada profe tendrá su registro en un objeto
           prof.events = [];
 
@@ -1590,6 +1518,8 @@ function shiftClassByTime(time) {
 .area-event__dot {
   width: 16px;
   height: 16px;
+  text-align: center  ;
+  padding: 2px;
   border-radius: 50%;
   display: inline-flex;
   cursor: pointer;
