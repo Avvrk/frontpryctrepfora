@@ -1062,18 +1062,15 @@ function handleAreaDateSelect(selectionInfo) {
     }
 
     instructorSelection.dates = instructorSelection.dates.filter(
-      (item) => item.date !== dayKey
+      (date) => date !== dayKey
     );
 
-    instructorSelection.dates.push({
-      date: dayKey,
-      shift: shiftKey,
-    });
+    instructorSelection.dates.push(dayKey);
 
     iterateDate.setDate(iterateDate.getDate() + 1);
   }
 
-  instructorSelection.dates.sort((a, b) => a.date.localeCompare(b.date));
+  instructorSelection.dates.sort((a, b) => a.localeCompare(b));
 
   programmingSelections.value = updatedSelections.filter(
     (item) => Array.isArray(item.dates) && item.dates.length > 0
