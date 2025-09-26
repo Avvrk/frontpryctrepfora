@@ -263,6 +263,14 @@
             @click="toggleProgrammingMode"
           />
         </div>
+        <q-btn
+            label="Ver selección"
+            color="secondary"
+            size="sm"
+            flat
+            :disable="!programmingSelections.length"
+            @click="logProgrammingSelection"
+          />
         <!-- <p>q-mt-md q-mb-lg flex items-center justify-center gap-3</p> -->
         <div
           v-for="p in legendInstructors"
@@ -431,39 +439,6 @@
                   </template>
                 </VMenu>
               </template>
-              
-              <template v-else v-slot:eventContent="arg">
-                <VMenu
-                  :autoHide="false"
-                  :delay="0"
-                  class="justify-center items-center customEvents"
-                >
-                  <span>
-                    <i>{{ arg.event.extendedProps.fiche }}</i>
-                    <br />
-                    <i
-                      >({{ arg.event.extendedProps.tstart }} -
-                      {{ arg.event.extendedProps.tend }})</i
-                    >
-                  </span>
-
-                  <template #popper>
-                    <div class="content-tooltip-event">
-                      <p>INSTRUCTOR: {{ arg.event.title }}</p>
-                      <p>FICHA: {{ arg.event.extendedProps.fiche }}</p>
-                      <p>AMBIENTE: {{ arg.event.extendedProps.environment }}</p>
-                      <p>PROGRAMA: {{ arg.event.extendedProps.program }}</p>
-                      <p>RESULTADO: {{ arg.event.extendedProps.outcome }}</p>
-                      <p>NOTA: {{ arg.event.extendedProps.supporttext }}</p>
-                      <p>
-                        OBSERVACIÓN: {{ arg.event.extendedProps.observation }}
-                      </p>
-                      <p>HORA INICIO: {{ arg.event.extendedProps.tstart }}</p>
-                      <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
-                    </div>
-                  </template>
-                </VMenu>
-              </template>
             </FullCalendar>
           </div>
         </div>
@@ -599,6 +574,7 @@ let optionsThematicarea = ref([]);
 let copyFilterInst = ref([]);
 let programmingMode = ref(false);
 let selectedInstructorId = ref(null);
+const programmingSelections = ref([]);
 
 const getAreaTooltipText = (value, fallback) => {
   if (value === null || value === undefined) {
@@ -752,6 +728,7 @@ const areaDailySlots = computed(() => {
           instructor: instructor.name,
           instructorId: instructor.id,
           color: instructor.color,
+          shiftKey,
           slotKey,
         });
       });
@@ -779,6 +756,7 @@ const resetReportData = () => {
   print.value = false;
   programmingMode.value = false;
   selectedInstructorId.value = null;
+  clearProgrammingSelection();
 };
 
 const clearDataCalender = () => {
@@ -849,6 +827,7 @@ function toggleProgrammingMode() {
 
   if (!programmingMode.value) {
     selectedInstructorId.value = null;
+    clearProgrammingSelection();
   }
 }
 
@@ -936,7 +915,7 @@ function generateCalendar() {
       '01'
     ).toString();
 
-    calendarOptions.value.push({
+    const calendarConfig = {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       locale: esLocale,
       initialView: 'dayGridMonth',
@@ -950,10 +929,168 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
-    });
+      };
+
+    if (shape.value === 'area') {
+      calendarConfig.selectAllow = () =>
+        programmingMode.value && Boolean(selectedInstructorId.value);
+
+      calendarConfig.select = (selectionInfo) => {
+        if (programmingMode.value && selectedInstructorId.value) {
+          handleAreaDateSelect(selectionInfo);
+        }
+      };
+    }
+
+    calendarOptions.value.push(calendarConfig);
   });
 
   existInfo.value = true;
+}
+
+function handleAreaDateSelect(selectionInfo) {
+  if (!programmingMode.value || !selectedInstructorId.value) {
+    return;
+  }
+
+  const instructor = legendInstructors.value.find(
+    (item) => item.id === selectedInstructorId.value
+  );
+
+  if (!instructor) {
+    return;
+  }
+
+  const { start, end } = selectionInfo;
+  if (!(start instanceof Date) || !(end instanceof Date)) {
+    return;
+  }
+
+  const updatedSelections = [...programmingSelections.value];
+  let instructorSelection = updatedSelections.find(
+    (item) => item.instructorId === instructor.id
+  );
+
+  if (!instructorSelection) {
+    instructorSelection = {
+      instructorId: instructor.id,
+      instructorName: instructor.name,
+      dates: [],
+    };
+    updatedSelections.push(instructorSelection);
+  }
+
+  const iterateDate = new Date(start.getTime());
+
+  while (iterateDate < end) {
+    const dayKey = normalizeDateKey(iterateDate);
+
+    if (!dayKey) {
+      iterateDate.setDate(iterateDate.getDate() + 1);
+      continue;
+    }
+
+    const daySlots = areaDailySlots.value?.[dayKey] || null;
+
+    let matchingSlot = null;
+    if (daySlots) {
+      const slotCollections = Object.values(daySlots).filter(Array.isArray);
+      matchingSlot = slotCollections
+        .flat()
+        .find((slot) => slot?.instructorId === instructor.id);
+    }
+
+    let shiftKey = matchingSlot?.shiftKey || null;
+
+    if (!shiftKey && daySlots) {
+      for (const [key, slots] of Object.entries(daySlots)) {
+        if (
+          Array.isArray(slots) &&
+          slots.some((slot) => slot?.instructorId === instructor.id)
+        ) {
+          shiftKey = key;
+          break;
+        }
+      }
+    }
+
+    if (!shiftKey) {
+      const calendar = selectionInfo.view?.calendar;
+      if (calendar) {
+        const events = calendar.getEvents() || [];
+        for (const calendarEvent of events) {
+          if (normalizeDateKey(calendarEvent.start) !== dayKey) {
+            continue;
+          }
+
+          const areaItems = calendarEvent.extendedProps?.areaItems || [];
+          const areaMatch = areaItems.find(
+            (slot) => slot?.instructorId === instructor.id
+          );
+
+          if (areaMatch) {
+            shiftKey =
+              areaMatch.shiftKey ||
+              getShiftKeyFromEvent(areaMatch) ||
+              getShiftKeyFromEvent(calendarEvent.extendedProps) ||
+              getShiftKeyFromEvent(calendarEvent);
+          }
+
+          if (!shiftKey) {
+            const propsMatch =
+              calendarEvent.extendedProps?.instructorId === instructor.id ||
+              calendarEvent.extendedProps?.instructor === instructor.name;
+
+            if (propsMatch) {
+              shiftKey =
+                calendarEvent.extendedProps?.shiftKey ||
+                getShiftKeyFromEvent(calendarEvent.extendedProps) ||
+                getShiftKeyFromEvent(calendarEvent);
+            }
+          }
+
+          if (shiftKey) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (!shiftKey) {
+      iterateDate.setDate(iterateDate.getDate() + 1);
+      continue;
+    }
+
+    instructorSelection.dates = instructorSelection.dates.filter(
+      (item) => item.date !== dayKey
+    );
+
+    instructorSelection.dates.push({
+      date: dayKey,
+      shift: shiftKey,
+    });
+
+    iterateDate.setDate(iterateDate.getDate() + 1);
+  }
+
+  instructorSelection.dates.sort((a, b) => a.date.localeCompare(b.date));
+
+  programmingSelections.value = updatedSelections.filter(
+    (item) => Array.isArray(item.dates) && item.dates.length > 0
+  );
+}
+
+function clearProgrammingSelection() {
+  programmingSelections.value = [];
+}
+
+function logProgrammingSelection() {
+  if (!programmingSelections.value.length) {
+    console.log('No hay selección de programación registrada.');
+    return;
+  }
+
+  console.log('Selección de programación:', JSON.parse(JSON.stringify(programmingSelections.value)));
 }
 
 async function getFiches() {
