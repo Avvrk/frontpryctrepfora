@@ -980,6 +980,36 @@ function handleAreaDateSelect(selectionInfo) {
     updatedSelections.push(instructorSelection);
   }
 
+   const selectionDayKeys = [];
+  const selectionIterator = new Date(start.getTime());
+
+  while (selectionIterator < end) {
+    const dayKey = normalizeDateKey(selectionIterator);
+
+    if (dayKey) {
+      selectionDayKeys.push(dayKey);
+    }
+
+    selectionIterator.setDate(selectionIterator.getDate() + 1);
+  }
+
+  if (
+    selectionDayKeys.length === 1 &&
+    instructorSelection.dates.includes(selectionDayKeys[0])
+  ) {
+    const [dayKeyToRemove] = selectionDayKeys;
+
+    instructorSelection.dates = instructorSelection.dates.filter(
+      (date) => date !== dayKeyToRemove
+    );
+
+    programmingSelections.value = updatedSelections.filter(
+      (item) => Array.isArray(item.dates) && item.dates.length > 0
+    );
+
+    return;
+  }
+  
   const iterateDate = new Date(start.getTime());
 
   while (iterateDate < end) {
