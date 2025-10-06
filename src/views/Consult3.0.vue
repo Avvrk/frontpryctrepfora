@@ -630,15 +630,16 @@ const normalizeDateKey = (value) => {
     return null;
   }
 
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toLocaleDateString('sv-SE');
-  }
-
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return value;
   }
 
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
   return null;
 };
 
@@ -918,6 +919,7 @@ function generateCalendar() {
     const calendarConfig = {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       locale: esLocale,
+      timeZone: 'America/Bogota',
       initialView: 'dayGridMonth',
       selectable: true,
       initialDate: formatDate,
@@ -932,9 +934,7 @@ function generateCalendar() {
       };
 
     if (shape.value === 'area') {
-      calendarConfig.selectAllow = () =>
-        programmingMode.value && Boolean(selectedInstructorId.value);
-
+      calendarConfig.selectAllow = () => programmingMode.value && !!selectedInstructorId.value;
       calendarConfig.select = (selectionInfo) => {
         if (programmingMode.value && selectedInstructorId.value) {
           handleAreaDateSelect(selectionInfo);
@@ -949,162 +949,39 @@ function generateCalendar() {
 }
 
 function handleAreaDateSelect(selectionInfo) {
-  if (!programmingMode.value || !selectedInstructorId.value) {
-    return;
+  if (!programmingMode.value || !selectedInstructorId.value) return;
+
+  const instructor = legendInstructors.value.find(i => i.id === selectedInstructorId.value);
+  if (!instructor) return;
+
+  const { start, end } = selectionInfo; // FullCalendar: [start, end)
+  if (!(start instanceof Date) || !(end instanceof Date)) return;
+
+  const normalize = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    .toLocaleDateString('sv-SE'); // YYYY-MM-DD
+
+  // busca o crea contenedor del instructor
+  const list = [...programmingSelections.value];
+  let sel = list.find(x => x.instructorId === instructor.id);
+  if (!sel) {
+    sel = { instructorId: instructor.id, instructorName: instructor.name, dates: [] };
+    list.push(sel);
   }
 
-  const instructor = legendInstructors.value.find(
-    (item) => item.id === selectedInstructorId.value
-  );
-
-  if (!instructor) {
-    return;
+  // recorre días [start, end)
+  const cursor = new Date(start);
+  while (cursor < end) {
+    const key = normalize(cursor);
+    // toggle: si ya estaba, se quita; si no, se agrega
+    const idx = sel.dates.indexOf(key);
+    if (idx >= 0) sel.dates.splice(idx, 1);
+    else sel.dates.push(key);
+    cursor.setDate(cursor.getDate() + 1);
   }
 
-  const { start, end } = selectionInfo;
-  if (!(start instanceof Date) || !(end instanceof Date)) {
-    return;
-  }
-
-  const updatedSelections = [...programmingSelections.value];
-  let instructorSelection = updatedSelections.find(
-    (item) => item.instructorId === instructor.id
-  );
-
-  if (!instructorSelection) {
-    instructorSelection = {
-      instructorId: instructor.id,
-      instructorName: instructor.name,
-      dates: [],
-    };
-    updatedSelections.push(instructorSelection);
-  }
-
-   const selectionDayKeys = [];
-  const selectionIterator = new Date(start.getTime());
-
-  while (selectionIterator < end) {
-    const dayKey = normalizeDateKey(selectionIterator);
-
-    if (dayKey) {
-      selectionDayKeys.push(dayKey);
-    }
-
-    selectionIterator.setDate(selectionIterator.getDate() + 1);
-  }
-
-  if (
-    selectionDayKeys.length === 1 &&
-    instructorSelection.dates.includes(selectionDayKeys[0])
-  ) {
-    const [dayKeyToRemove] = selectionDayKeys;
-
-    instructorSelection.dates = instructorSelection.dates.filter(
-      (date) => date !== dayKeyToRemove
-    );
-
-    programmingSelections.value = updatedSelections.filter(
-      (item) => Array.isArray(item.dates) && item.dates.length > 0
-    );
-
-    return;
-  }
-  
-  const iterateDate = new Date(start.getTime());
-
-  while (iterateDate < end) {
-    const dayKey = normalizeDateKey(iterateDate);
-
-    if (!dayKey) {
-      iterateDate.setDate(iterateDate.getDate() + 1);
-      continue;
-    }
-
-    const daySlots = areaDailySlots.value?.[dayKey] || null;
-
-    let matchingSlot = null;
-    if (daySlots) {
-      const slotCollections = Object.values(daySlots).filter(Array.isArray);
-      matchingSlot = slotCollections
-        .flat()
-        .find((slot) => slot?.instructorId === instructor.id);
-    }
-
-    let shiftKey = matchingSlot?.shiftKey || null;
-
-    if (!shiftKey && daySlots) {
-      for (const [key, slots] of Object.entries(daySlots)) {
-        if (
-          Array.isArray(slots) &&
-          slots.some((slot) => slot?.instructorId === instructor.id)
-        ) {
-          shiftKey = key;
-          break;
-        }
-      }
-    }
-
-    if (!shiftKey) {
-      const calendar = selectionInfo.view?.calendar;
-      if (calendar) {
-        const events = calendar.getEvents() || [];
-        for (const calendarEvent of events) {
-          if (normalizeDateKey(calendarEvent.start) !== dayKey) {
-            continue;
-          }
-
-          const areaItems = calendarEvent.extendedProps?.areaItems || [];
-          const areaMatch = areaItems.find(
-            (slot) => slot?.instructorId === instructor.id
-          );
-
-          if (areaMatch) {
-            shiftKey =
-              areaMatch.shiftKey ||
-              getShiftKeyFromEvent(areaMatch) ||
-              getShiftKeyFromEvent(calendarEvent.extendedProps) ||
-              getShiftKeyFromEvent(calendarEvent);
-          }
-
-          if (!shiftKey) {
-            const propsMatch =
-              calendarEvent.extendedProps?.instructorId === instructor.id ||
-              calendarEvent.extendedProps?.instructor === instructor.name;
-
-            if (propsMatch) {
-              shiftKey =
-                calendarEvent.extendedProps?.shiftKey ||
-                getShiftKeyFromEvent(calendarEvent.extendedProps) ||
-                getShiftKeyFromEvent(calendarEvent);
-            }
-          }
-
-          if (shiftKey) {
-            break;
-          }
-        }
-      }
-    }
-
-    if (!shiftKey) {
-      iterateDate.setDate(iterateDate.getDate() + 1);
-      continue;
-    }
-
-    instructorSelection.dates = instructorSelection.dates.filter(
-      (date) => date !== dayKey
-    );
-
-    instructorSelection.dates.push(dayKey);
-
-    iterateDate.setDate(iterateDate.getDate() + 1);
-  }
-
-  instructorSelection.dates.sort((a, b) => a.localeCompare(b));
-
-  programmingSelections.value = updatedSelections.filter(
-    (item) => Array.isArray(item.dates) && item.dates.length > 0
-  );
+  sel.dates.sort((a, b) => a.localeCompare(b));
+  // limpia instructores sin fechas
+  programmingSelections.value = list.filter(x => x.dates.length);
 }
 
 function clearProgrammingSelection() {
@@ -1520,14 +1397,15 @@ function generateDailyEvents(startDate, endDate) {
     date <= end;
     date.setDate(date.getDate() + 1)
   ) {
-    const baseDate = new Date(date);
-    baseDate.setDate(baseDate.getDate() + 1);
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    const d = date.getDate();
 
     // se crean los tres turnos básicos
     events.push(
       {
-        start: new Date(baseDate.setHours(6, 30, 0, 0)),
-        end: new Date(baseDate.setHours(12, 30, 0, 0)),
+        start: new Date(y, m, d, 6, 30, 0, 0),
+        end:   new Date(y, m, d, 12, 30, 0, 0),
         title: '\u200B',
         observation: 'JORNADA MAÑANA',
         allDay: true,
@@ -1537,8 +1415,8 @@ function generateDailyEvents(startDate, endDate) {
         className: 'jornada-mañana',
       },
       {
-        start: new Date(baseDate.setHours(12, 30, 0, 0)),
-        end: new Date(baseDate.setHours(18, 30, 0, 0)),
+        start: new Date(y, m, d, 12, 30, 0, 0),
+        end:   new Date(y, m, d, 18, 30, 0, 0),
         title: '\u200B',
         observation: 'JORNADA TARDE',
         allDay: true,
@@ -1548,8 +1426,8 @@ function generateDailyEvents(startDate, endDate) {
         className: 'jornada-tarde',
       },
       {
-        start: new Date(baseDate.setHours(18, 30, 0, 0)),
-        end: new Date(baseDate.setHours(23, 30, 0, 0)),
+        start: new Date(y, m, d, 18, 30, 0, 0),
+        end:   new Date(y, m, d, 23, 30, 0, 0),
         title: '\uFEFF',
         observation: 'JORNADA NOCHE',
         allDay: true,
@@ -1605,10 +1483,10 @@ function generateMonthEvents(my) {
 
   // mezcla los eventos reales con los slots del calendario
   events.forEach((a, i) => {
-    const dayKey = a.start.toLocaleDateString('sv-SE');
+    const dayKey = normalizeDateKey(a.start);
 
     calendarMonthEvents.forEach((b) => {
-      if (dayKey === b.start) {
+      if (dayKey && dayKey === normalizeDateKey(b.start)) {
         const slotStart = a.start.getHours() * 60 + a.start.getMinutes();
         const slotEnd = a.end.getHours() * 60 + a.end.getMinutes();
 
@@ -1688,17 +1566,17 @@ function generateMonthEvents(my) {
 
   if (shape.value === 'area') {
     return events.map((event) => {
-      const dayKey = normalizeDateKey(event.start);
-      const shiftKey = getShiftKeyFromEvent(event);
-      const daySlots = dayKey ? areaDailySlots.value[dayKey] : null;
-      const areaItems = daySlots && shiftKey ? daySlots[shiftKey] || [] : [];
+      const dayKey  = normalizeDateKey(event.start);
+      const shiftKey = getShiftKeyFromEvent(event); // por observation o por hora del slot
+      const daySlots = dayKey ? areaDailySlots.value?.[dayKey] : null;
+      const areaItems = (daySlots && shiftKey) ? (daySlots[shiftKey] || []) : [];
 
       return {
         ...event,
         extendedProps: {
           ...(event.extendedProps || {}),
           shiftKey,
-          areaItems,
+          areaItems,     // ← los punticos del template
         },
       };
     });
