@@ -179,49 +179,49 @@
     </q-form>
 
     <div class="row justify-center" v-if="existInfo">
-  <div class="col-11">
-    <div class="actions-bar">
-      <q-btn
-        v-if="shape === 'area' && existInfo"
-        label="Programar"
-        color="primary"
-        class="bg-green-7 text-white"
-        :outline="!programmingMode"
-        :unelevated="programmingMode"
-        :disable="legendInstructors.length === 0"
-        @click="toggleProgrammingMode"
-      />
-      <q-btn
-        v-if="shape === 'area' && existInfo"
-        label="Ver selección"
-        color="secondary"
-        class="bg-green-7 text-white"
-        :disable="!programmingSelections.length"
-        @click="logProgrammingSelection"
-      />
-      <q-btn
-        v-if="shape === 'instructor' && existInfo"
-        label="Generar PDF"
-        icon="print"
-        class="bg-green-7 text-white"
-        @click="exportCalender()"
-      />
-      <q-btn
-        v-if="shape === 'instructor' && existInfo"
-        label="Generar excel"
-        icon="print"
-        class="bg-green-9 text-white"
-        @click="saveExcel()"
-      />
-      <q-btn
-        label="Cancelar"
-        icon="cancel"
-        class="bg-red-5 text-white"
-        @click="cancel()"
-      />
+      <div class="col-11">
+        <div class="actions-bar">
+          <q-btn
+            v-if="shape === 'area' && existInfo"
+            label="Programar"
+            color="primary"
+            class="bg-green-7 text-white"
+            :outline="!programmingMode"
+            :unelevated="programmingMode"
+            :disable="legendInstructors.length === 0"
+            @click="toggleProgrammingMode"
+          />
+          <q-btn
+            v-if="shape === 'area' && existInfo"
+            label="Ver selección"
+            color="secondary"
+            class="bg-green-7 text-white"
+            :disable="!programmingSelections.length"
+            @click="logProgrammingSelection"
+          />
+          <q-btn
+            v-if="shape === 'instructor' && existInfo"
+            label="Generar PDF"
+            icon="print"
+            class="bg-green-7 text-white"
+            @click="exportCalender()"
+          />
+          <q-btn
+            v-if="shape === 'instructor' && existInfo"
+            label="Generar excel"
+            icon="print"
+            class="bg-green-9 text-white"
+            @click="saveExcel()"
+          />
+          <q-btn
+            label="Cancelar"
+            icon="cancel"
+            class="bg-red-5 text-white"
+            @click="cancel()"
+          />
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
     <div id="calenderPrint">
       <div class="row justify-center flex">
@@ -252,54 +252,62 @@
           </span>
         </div>
       </div>
-      <div class="legend-wrapper" :class="{ 'is-programming': programmingMode }" v-if="shape === 'area' && existInfo">
-  <div class="legend-toolbar">
-    <q-input
-      v-model="legendQuery"
-      type="search"
-      dense
-      debounce="150"
-      clearable
-      placeholder="Filtrar instructores..."
-      class="legend-search"
-      :clear-value="''"
-      @keyup.esc="legendQuery = ''"
-    >
-      <template #prepend>
-        <q-icon name="search" />
-      </template>
-    </q-input>
-    <q-space />
-    <q-toggle v-model="denseLegend" label="Compacto" dense />
-  </div>
+      <div
+        class="legend-wrapper"
+        :class="{ 'is-programming': programmingMode }"
+        v-if="shape === 'area' && existInfo"
+      >
+        <div class="legend-toolbar">
+          <q-input
+            v-model="legendQuery"
+            type="search"
+            dense
+            debounce="150"
+            clearable
+            placeholder="Filtrar instructores..."
+            class="legend-search"
+            :clear-value="''"
+            @keyup.esc="legendQuery = ''"
+          >
+            <template #prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+          <q-space />
+          <q-toggle v-model="denseLegend" label="Compacto" dense />
+        </div>
 
-  <div class="legend-grid">
-    <label
-      v-for="p in filteredLegend"
-      :key="p.id"
-      class="legend-chip"
-      :class="{
-        'is-selected': programmingMode && selectedInstructorId === p.id,
-        'is-compact': denseLegend
-      }"
-      :style="{ '--chip-color': p.color }"
-    >
-      <input
-        v-if="programmingMode"
-        class="legend-chip__radio"
-        type="radio"
-        :value="p.id"
-        v-model="selectedInstructorId"
-        aria-label="Seleccionar instructor"
-      />
-      <span class="legend-chip__swatch" aria-hidden="true"></span>
-      <span class="legend-chip__name q-truncate">{{ p.name }}</span>
-      <span v-if="typeof p._count === 'number'" class="legend-chip__count" title="Eventos en rango">
-        {{ p._count }}
-      </span>
-    </label>
-  </div>
-</div>
+        <div class="legend-grid">
+          <label
+            v-for="p in filteredLegend"
+            :key="p.id"
+            class="legend-chip"
+            :class="{
+              'is-selected': programmingMode && selectedInstructorId === p.id,
+              'is-compact': denseLegend,
+            }"
+            :style="{ '--chip-color': p.color }"
+          >
+            <input
+              v-if="programmingMode"
+              class="legend-chip__radio"
+              type="radio"
+              :value="p.id"
+              v-model="selectedInstructorId"
+              aria-label="Seleccionar instructor"
+            />
+            <span class="legend-chip__swatch" aria-hidden="true"></span>
+            <span class="legend-chip__name q-truncate">{{ p.name }}</span>
+            <span
+              v-if="typeof p._count === 'number'"
+              class="legend-chip__count"
+              title="Eventos en rango"
+            >
+              {{ p._count }}
+            </span>
+          </label>
+        </div>
+      </div>
       <div
         class="time-legend q-ml-xl q-pt-xl column"
         style="position: fixed; left: 0; bottom: 10%"
@@ -352,115 +360,147 @@
           </div>
         </div>
         <div class="row justify-center flex" v-if="existInfo && showCalender">
-          <div class="col-10 q-pb-lg q-mt-md justify-center flex">
+          <div class="col-12 col-xl-10 q-pb-lg q-mt-md justify-center flex">
+            <div class="calendar-frame">
             <div class="calendar-scroll">
-            <FullCalendar class="calender text-uppercase" :options="c">
-              <template v-if="shape === 'area'" v-slot:eventContent="arg">
-                <div class="area-event">
-                  <div
-                    v-if="arg.event.extendedProps.areaItems.length"
-                    class="area-event__dots"
-                  >
-                    <VMenu
-  v-for="slot in arg.event.extendedProps.areaItems"
-  :key="tooltipEpoch + '-' + slot.slotKey"
-  :triggers="['hover','focus']"
-  :popper-triggers="['hover','mouseleave','blur']"
-  :auto-hide="true"
-  :interactive="true"
-  :delay="{ show: 120, hide: 100 }"
-  strategy="fixed"
-  :distance="8"
-  placement="top"
-  :teleport="'body'"
-  :close-on-content-click="false"
-  :dispose-timeout="0"
-  :shown="openTooltipId === slot.slotKey"
-  @apply-show="openTooltipId = slot.slotKey"
-  @apply-hide="openTooltipId = (openTooltipId === slot.slotKey ? null : openTooltipId)"
-  class="area-event__menu"
->
-                    
-                      <span
-                        class="area-event__dot"
-                        :style="{ backgroundColor: slot.color }"
-                      >{{ slot.instructor.charAt(0).toUpperCase() }}</span>
+              <FullCalendar class="calender text-uppercase" :options="c">
+                <template v-if="shape === 'area'" v-slot:eventContent="arg">
+                  <div class="area-event">
+                    <div
+                      v-if="arg.event.extendedProps.areaItems.length"
+                      class="area-event__dots"
+                    >
+                      <VMenu
+                        v-for="slot in arg.event.extendedProps.areaItems"
+                        :key="tooltipEpoch + '-' + slot.slotKey"
+                        :triggers="['hover', 'focus']"
+                        :popper-triggers="['hover', 'mouseleave', 'blur']"
+                        :auto-hide="true"
+                        :interactive="true"
+                        :delay="{ show: 120, hide: 100 }"
+                        strategy="fixed"
+                        :distance="8"
+                        placement="top"
+                        :teleport="'body'"
+                        :close-on-content-click="false"
+                        :dispose-timeout="0"
+                        :shown="openTooltipId === slot.slotKey"
+                        @apply-show="openTooltipId = slot.slotKey"
+                        @apply-hide="
+                          openTooltipId =
+                            openTooltipId === slot.slotKey
+                              ? null
+                              : openTooltipId
+                        "
+                        class="area-event__menu"
+                      >
+                        <span
+                          class="area-event__dot"
+                          :style="{ backgroundColor: slot.color }"
+                          >{{ slot.instructor.charAt(0).toUpperCase() }}</span
+                        >
 
-                      <template #popper>
-                        <div class="content-tooltip-event1">
-                          <p>
-                            INSTRUCTOR:
-                            {{
-                              getAreaTooltipText(
-                                slot.instructor,
-                                'Sin instructor'
-                              )
-                            }}
-                          </p>
-                          <p>
-                            FICHA:
-                            {{ getAreaTooltipText(slot.fiche, 'Sin ficha') }}
-                          </p>
-                          <p>
-                            AMBIENTE:
-                            {{
-                              getAreaTooltipText(
-                                slot.environment,
-                                'Sin ambiente'
-                              )
-                            }}
-                          </p>
-                        </div>
-                      </template>
-                    </VMenu>
-                  </div>
-                </div>
-              </template>
-              <template
-                v-else-if="opcion == 'instructor'"
-                v-slot:eventContent="arg"
-              >
-
-                <VMenu
-  :key="tooltipEpoch + '-' + (arg?.event?.id || arg?.event?.startStr || arg?.event?.title)"
-  :triggers="['hover','focus']"
-  :popper-triggers="['hover','mouseleave','blur']"
-  :auto-hide="true"
-  :interactive="true"
-  :delay="{ show: 120, hide: 100 }"
-  strategy="fixed"
-  :distance="8"
-  placement="top"
-  :teleport="'body'"
-  :close-on-content-click="false"
-  :dispose-timeout="0"
-  :shown="openTooltipId === (arg?.event?.id || arg?.event?.startStr || arg?.event?.title)"
-  @apply-show="openTooltipId = (arg?.event?.id || arg?.event?.startStr || arg?.event?.title)"
-  @apply-hide="openTooltipId = (openTooltipId === (arg?.event?.id || arg?.event?.startStr || arg?.event?.title) ? null : openTooltipId)"
-  class="justify-center items-center customEvents"
->
-                  <span>
-                    <b>{{ arg.timeText }}</b>
-                    <i>{{ arg.event.title }}</i></span
-                  >
-
-                  <template #popper>
-                    <div class="content-tooltip-event">
-                      <p>FICHA: {{ arg.event.title }}</p>
-                      <p>AMBIENTE: {{ arg.event.extendedProps.environment }}</p>
-                      <p>PROGRAMA: {{ arg.event.extendedProps.program }}</p>
-                      <p>RESULTADO: {{ arg.event.extendedProps.outcome }}</p>
-                      <p>NOTA: {{ arg.event.extendedProps.supporttext }}</p>
-                      <p>
-                        OBSERVACIÓN: {{ arg.event.extendedProps.observation }}
-                      </p>
-                      <p>HORA INICIO: {{ arg.event.extendedProps.tstart }}</p>
-                      <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
+                        <template #popper>
+                          <div class="content-tooltip-event1">
+                            <p>
+                              INSTRUCTOR:
+                              {{
+                                getAreaTooltipText(
+                                  slot.instructor,
+                                  'Sin instructor'
+                                )
+                              }}
+                            </p>
+                            <p>
+                              FICHA:
+                              {{ getAreaTooltipText(slot.fiche, 'Sin ficha') }}
+                            </p>
+                            <p>
+                              AMBIENTE:
+                              {{
+                                getAreaTooltipText(
+                                  slot.environment,
+                                  'Sin ambiente'
+                                )
+                              }}
+                            </p>
+                          </div>
+                        </template>
+                      </VMenu>
                     </div>
-                  </template>
-                </VMenu>
-              </template>
-            </FullCalendar>
+                  </div>
+                </template>
+                <template
+                  v-else-if="opcion == 'instructor'"
+                  v-slot:eventContent="arg"
+                >
+                  <VMenu
+                    :key="
+                      tooltipEpoch +
+                      '-' +
+                      (arg?.event?.id ||
+                        arg?.event?.startStr ||
+                        arg?.event?.title)
+                    "
+                    :triggers="['hover', 'focus']"
+                    :popper-triggers="['hover', 'mouseleave', 'blur']"
+                    :auto-hide="true"
+                    :interactive="true"
+                    :delay="{ show: 120, hide: 100 }"
+                    strategy="fixed"
+                    :distance="8"
+                    placement="top"
+                    :teleport="'body'"
+                    :close-on-content-click="false"
+                    :dispose-timeout="0"
+                    :shown="
+                      openTooltipId ===
+                      (arg?.event?.id ||
+                        arg?.event?.startStr ||
+                        arg?.event?.title)
+                    "
+                    @apply-show="
+                      openTooltipId =
+                        arg?.event?.id ||
+                        arg?.event?.startStr ||
+                        arg?.event?.title
+                    "
+                    @apply-hide="
+                      openTooltipId =
+                        openTooltipId ===
+                        (arg?.event?.id ||
+                          arg?.event?.startStr ||
+                          arg?.event?.title)
+                          ? null
+                          : openTooltipId
+                    "
+                    class="justify-center items-center customEvents"
+                  >
+                    <span>
+                      <b>{{ arg.timeText }}</b>
+                      <i>{{ arg.event.title }}</i></span
+                    >
+
+                    <template #popper>
+                      <div class="content-tooltip-event">
+                        <p>FICHA: {{ arg.event.title }}</p>
+                        <p>
+                          AMBIENTE: {{ arg.event.extendedProps.environment }}
+                        </p>
+                        <p>PROGRAMA: {{ arg.event.extendedProps.program }}</p>
+                        <p>RESULTADO: {{ arg.event.extendedProps.outcome }}</p>
+                        <p>NOTA: {{ arg.event.extendedProps.supporttext }}</p>
+                        <p>
+                          OBSERVACIÓN: {{ arg.event.extendedProps.observation }}
+                        </p>
+                        <p>HORA INICIO: {{ arg.event.extendedProps.tstart }}</p>
+                        <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
+                      </div>
+                    </template>
+                  </VMenu>
+                </template>
+              </FullCalendar>
+            </div>
           </div>
           </div>
         </div>
@@ -470,7 +510,14 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import {
+  ref,
+  onBeforeMount,
+  watch,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+} from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -598,7 +645,7 @@ let programmingMode = ref(false);
 let selectedInstructorId = ref(null);
 const programmingSelections = ref([]);
 
-const legendQuery = ref('');    // deja string por defecto, no null
+const legendQuery = ref(''); // deja string por defecto, no null
 const denseLegend = ref(false);
 
 // cuál tooltip está abierto ahora mismo
@@ -606,14 +653,16 @@ const openTooltipId = ref(null);
 
 // cierra todos al cambiar de tamaño/orientación (ya tenías epoch; esto convive)
 const tooltipEpoch = ref(0);
-const forceCloseTooltips = () => { 
-  openTooltipId.value = null; 
-  tooltipEpoch.value++; 
+const forceCloseTooltips = () => {
+  openTooltipId.value = null;
+  tooltipEpoch.value++;
 };
 
 onMounted(() => {
   window.addEventListener('resize', forceCloseTooltips, { passive: true });
-  window.addEventListener('orientationchange', forceCloseTooltips, { passive: true });
+  window.addEventListener('orientationchange', forceCloseTooltips, {
+    passive: true,
+  });
 });
 
 onBeforeUnmount(() => {
@@ -623,16 +672,18 @@ onBeforeUnmount(() => {
 
 const sanitize = (s) =>
   String(s ?? '')
-    .normalize('NFD')                       // quita acentos
+    .normalize('NFD') // quita acentos
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .trim();
 
 const filteredLegend = computed(() => {
   const q = sanitize(legendQuery.value);
-  const base = Array.isArray(legendInstructors.value) ? legendInstructors.value : [];
-  if (!q) return base;                      // vacío => muestra todos
-  return base.filter(p => sanitize(p.name).includes(q));
+  const base = Array.isArray(legendInstructors.value)
+    ? legendInstructors.value
+    : [];
+  if (!q) return base; // vacío => muestra todos
+  return base.filter((p) => sanitize(p.name).includes(q));
 });
 
 function totalEventsByMonthMap(monthMap) {
@@ -1000,10 +1051,11 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
-      };
+    };
 
     if (shape.value === 'area') {
-      calendarConfig.selectAllow = () => programmingMode.value && !!selectedInstructorId.value;
+      calendarConfig.selectAllow = () =>
+        programmingMode.value && !!selectedInstructorId.value;
       calendarConfig.select = (selectionInfo) => {
         if (programmingMode.value && selectedInstructorId.value) {
           handleAreaDateSelect(selectionInfo);
@@ -1020,20 +1072,28 @@ function generateCalendar() {
 function handleAreaDateSelect(selectionInfo) {
   if (!programmingMode.value || !selectedInstructorId.value) return;
 
-  const instructor = legendInstructors.value.find(i => i.id === selectedInstructorId.value);
+  const instructor = legendInstructors.value.find(
+    (i) => i.id === selectedInstructorId.value
+  );
   if (!instructor) return;
 
   const { start, end } = selectionInfo; // FullCalendar: [start, end)
   if (!(start instanceof Date) || !(end instanceof Date)) return;
 
-  const normalize = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
-    .toLocaleDateString('sv-SE'); // YYYY-MM-DD
+  const normalize = (d) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).toLocaleDateString(
+      'sv-SE'
+    ); // YYYY-MM-DD
 
   // busca o crea contenedor del instructor
   const list = [...programmingSelections.value];
-  let sel = list.find(x => x.instructorId === instructor.id);
+  let sel = list.find((x) => x.instructorId === instructor.id);
   if (!sel) {
-    sel = { instructorId: instructor.id, instructorName: instructor.name, dates: [] };
+    sel = {
+      instructorId: instructor.id,
+      instructorName: instructor.name,
+      dates: [],
+    };
     list.push(sel);
   }
 
@@ -1050,7 +1110,7 @@ function handleAreaDateSelect(selectionInfo) {
 
   sel.dates.sort((a, b) => a.localeCompare(b));
   // limpia instructores sin fechas
-  programmingSelections.value = list.filter(x => x.dates.length);
+  programmingSelections.value = list.filter((x) => x.dates.length);
 }
 
 function clearProgrammingSelection() {
@@ -1063,7 +1123,10 @@ function logProgrammingSelection() {
     return;
   }
 
-  console.log('Selección de programación:', JSON.parse(JSON.stringify(programmingSelections.value)));
+  console.log(
+    'Selección de programación:',
+    JSON.parse(JSON.stringify(programmingSelections.value))
+  );
 }
 
 async function getFiches() {
@@ -1104,7 +1167,7 @@ async function getReport() {
   loadingData.value = true;
   resetReportData();
   console.log(copyFilterInst.value);
-  
+
   try {
     if (shape.value == 'area') {
       const list = copyFilterInst.value.map((i) => ({
@@ -1116,7 +1179,6 @@ async function getReport() {
       console.log(list);
       legendInstructors.value = list;
       console.log(legendInstructors.value);
-      
 
       const { months: mm, yearsMonth: yymm } = computeMonthsYears(
         fStart.value,
@@ -1135,8 +1197,8 @@ async function getReport() {
             },
             false
           );
-            console.log(res);
-            
+          console.log(res);
+
           // cada profe tendrá su registro en un objeto
           prof.events = [];
 
@@ -1414,7 +1476,7 @@ function generateDailyEvents(startDate, endDate) {
     events.push(
       {
         start: new Date(y, m, d, 6, 30, 0, 0),
-        end:   new Date(y, m, d, 12, 30, 0, 0),
+        end: new Date(y, m, d, 12, 30, 0, 0),
         title: '\u200B',
         observation: 'JORNADA MAÑANA',
         allDay: true,
@@ -1425,7 +1487,7 @@ function generateDailyEvents(startDate, endDate) {
       },
       {
         start: new Date(y, m, d, 12, 30, 0, 0),
-        end:   new Date(y, m, d, 18, 30, 0, 0),
+        end: new Date(y, m, d, 18, 30, 0, 0),
         title: '\u200B',
         observation: 'JORNADA TARDE',
         allDay: true,
@@ -1436,7 +1498,7 @@ function generateDailyEvents(startDate, endDate) {
       },
       {
         start: new Date(y, m, d, 18, 30, 0, 0),
-        end:   new Date(y, m, d, 23, 30, 0, 0),
+        end: new Date(y, m, d, 23, 30, 0, 0),
         title: '\uFEFF',
         observation: 'JORNADA NOCHE',
         allDay: true,
@@ -1575,17 +1637,17 @@ function generateMonthEvents(my) {
 
   if (shape.value === 'area') {
     return events.map((event) => {
-      const dayKey  = normalizeDateKey(event.start);
+      const dayKey = normalizeDateKey(event.start);
       const shiftKey = getShiftKeyFromEvent(event); // por observation o por hora del slot
       const daySlots = dayKey ? areaDailySlots.value?.[dayKey] : null;
-      const areaItems = (daySlots && shiftKey) ? (daySlots[shiftKey] || []) : [];
+      const areaItems = daySlots && shiftKey ? daySlots[shiftKey] || [] : [];
 
       return {
         ...event,
         extendedProps: {
           ...(event.extendedProps || {}),
           shiftKey,
-          areaItems,     // ← los punticos del template
+          areaItems, // ← los punticos del template
         },
       };
     });
@@ -1604,36 +1666,72 @@ function shiftClassByTime(time) {
 </script>
 
 <style>
-:root{
-  /* Sube el mínimo para que NO se comprima en móviles */
-  --cal-min-width: 1300px;     /* ajusta a tu gusto: 1200-1600 suele ir bien */
-  --cal-height: 760px;         /* más alto = días con más aire */
+:root {
+  /* Sube este mínimo si quieres forzar más scroll en pantallas pequeñas */
+  --cal-min-width: 1100px;
+  --cal-height: 760px;
 }
 
-/* Contenedor que habilita el scroll horizontal */
+/* Marco: limita ancho total y centra */
+.calendar-frame{
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 8px;
+}
+
+/* Scroller horizontal real */
 .calendar-scroll{
   width: 100%;
   overflow-x: auto;
-  overflow-y: visible;          /* para tooltips que se salgan hacia abajo */
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 6px;          /* deja espacio a la barra */
+  padding-bottom: 6px;
 }
 
-/* Estilo de la tabla-calendario */
+/* Calendario base */
 .calender{
-  /* No uses width:100% si quieres overflow; dale un mínimo y deja que se desborde */
-  min-width: var(--cal-min-width);
-  width: var(--cal-min-width);      /* se mantiene grande y el contenedor scrollea */
+  width: 100%;
   height: var(--cal-height);
   margin-inline: auto;
 }
 
-/* Opcional: scrollbar un poco más decente */
-.calendar-scroll::-webkit-scrollbar { height: 10px; }
-.calendar-scroll::-webkit-scrollbar-track { background: #f0f0f0; }
-.calendar-scroll::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 6px; }
-.calendar-scroll:hover::-webkit-scrollbar-thumb { background: #a8a8a8; }
+/* La tabla de días necesita “más ancho” para que haya algo que scrollear */
+.calender .fc-scrollgrid{
+  min-width: var(--cal-min-width);
+}
 
+/* Header pegajoso dentro del scroller horizontal */
+.calender .fc-toolbar-chunk{ min-width: 0; }
+
+.calender .fc-header-toolbar{
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #fff;
+  padding-right: 8px;
+}
+
+/* Título largo → elipsis */
+.calender .fc-toolbar-title{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Opcional: hace más estable el ancho de columnas */
+.calender .fc-theme-standard .fc-daygrid-body table{
+  table-layout: fixed;
+}
+
+/* Tus bordes del calendario */
+.fc-theme-standard td,
+.fc-theme-standard th { border-color: rgb(65, 64, 64); }
+
+.fc .fc-scrollgrid-liquid { border-color: rgb(65, 64, 64); }
+
+/* --- EVENTOS (vista área) --- */
 .area-event {
   width: 100%;
   min-height: 20px;
@@ -1651,26 +1749,21 @@ function shiftClassByTime(time) {
   justify-content: center;
 }
 
-.area-event__menu {
-  display: inline-flex;
-}
+.area-event__menu { display: inline-flex; }
 
 .area-event__dot {
   width: 16px;
   height: 16px;
-  text-align: center  ;
+  text-align: center;
   padding: 2px;
   border-radius: 50%;
   display: inline-flex;
   cursor: pointer;
 }
 
-
-
 .fc-daygrid-day { overflow: hidden; }
 
-
-/* Leyenda de horarios */
+/* --- LEYENDA DE TURNOS --- */
 .time-legend {
   display: flex;
   gap: 20px;
@@ -1678,128 +1771,23 @@ function shiftClassByTime(time) {
   flex-wrap: wrap;
   justify-content: center;
 }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 15px; font-weight: 600; }
+.legend-color { width: 12px; height: 12px; border-radius: 2px; }
+.legend-item.morning .legend-color { background-color: #ffd926; }
+.legend-item.afternoon .legend-color { background-color: #35f527; }
+.legend-item.night .legend-color { background-color: #00008b; }
+.legend-item.mixta .legend-color { background-color: #ff829b; }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-}
-
-.legend-item.morning .legend-color {
-  background-color: #ffd926;
-}
-
-.legend-item.afternoon .legend-color {
-  background-color: #35f527;
-}
-
-.legend-item.night .legend-color {
-  background-color: #00008b;
-}
-
-.legend-item.mixta .legend-color {
-  background-color: #ff829b;
-}
-
+/* Texto flotante de horas del mes */
 .hoursmonth {
   position: absolute;
   left: 50%;
-  transform: translate(-50%, 300%); /* baja 10px más */
+  transform: translate(-50%, 300%);
 }
 
-.fc-theme-standard td,
-.fc-theme-standard th {
-  border-color: rgb(65, 64, 64);
-}
-
-.fc .fc-scrollgrid-liquid {
-  border-color: rgb(65, 64, 64);
-}
-
-.jornada-mañana,
-.jornada-tarde,
-.jornada-noche {
-  border-width: 2px !important;
-  border-style: solid;
-}
-
-/* .jornadaMixta {
-  border-radius: 3px;
-  border: 1px solid transparent !important;  fuerza ancho/estilo del borde 
-  border-image: none !important;             neutraliza intentos previos 
-  background-origin: border-box;
-  background-clip: padding-box, border-box !important;
-  overflow: hidden;respeta el radius con fondos múltiples 
-  background:
-    linear-gradient(to right, #fedd07, #6d83c9) padding-box,
-    linear-gradient(to right, #fedd07, #6d83c9) border-box !important;
-} */
-
-.legend-toolbar {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.legend-entry {
-  align-items: center;
-}
-
-.legend-color-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
-}
-
-.legend-radio {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  width: 100%;
-  position: relative;
-}
-
-.legend-radio__input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.legend-radio__dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid #000;
-  transition: background-color 0.2s ease, border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.legend-radio__input:focus-visible + .legend-radio__dot {
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
-}
-
-.legend-radio__label {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-/* Contenedor general del legend */
+/* --- LEYENDA DE INSTRUCTORES --- */
 .legend-wrapper {
-  border: 1px solid rgba(0,0,0,.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 12px;
   background: #fff;
   padding: 12px;
@@ -1809,88 +1797,40 @@ function shiftClassByTime(time) {
 
 /* Barra superior: buscador y toggle */
 .legend-toolbar {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
-.legend-search {
-  width: min(420px, 100%);
-}
+.legend-search { width: min(420px, 100%); }
 
-/* Grid fluido y accesible */
 .legend-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px 12px;
   max-height: clamp(180px, 36vh, 320px);
   overflow-y: auto;
-  padding-right: 4px; /* deja respirar la barra de scroll */
+  padding-right: 4px;
 }
 
-/* Chip del instructor */
 .legend-chip {
-  --chip-color: #999; /* fallback */
+  --chip-color: #999;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border: 1px solid rgba(0,0,0,.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 999px;
   background: #fafafa;
   min-width: 0;
-  transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
-
-.legend-chip:hover {
-  background: #f3f3f3;
-}
-
-.legend-chip.is-selected {
-  border-color: var(--chip-color);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--chip-color) 28%, transparent);
-}
-
-/* Modo compacto: menos padding y tipografía ajustada */
-.legend-chip.is-compact {
-  padding: 6px 10px;
-}
-
-.legend-chip__radio {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.legend-chip__swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-  background: var(--chip-color);
-  outline: 2px solid rgba(0,0,0,.06);
-}
-
-.legend-chip__name {
-  font-size: .875rem;
-  font-weight: 500;
-  letter-spacing: .2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.legend-chip__count {
-  margin-left: auto;
-  font-size: .75rem;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: #eee;
-  color: #333;
-}
-
-/* El swatch por defecto (fuera de programación) sigue relleno */
+.legend-chip:hover { background: #f3f3f3; }
+.legend-chip.is-compact { padding: 6px 10px; }
+.legend-chip__radio { position: absolute; opacity: 0; pointer-events: none; }
 .legend-chip__swatch {
   width: 18px;
   height: 18px;
@@ -1898,28 +1838,24 @@ function shiftClassByTime(time) {
   flex: 0 0 auto;
   background: var(--chip-color);
   border: 2px solid var(--chip-color);
-  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
+.legend-chip__name { font-size: 0.875rem; font-weight: 500; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.legend-chip__count { margin-left: auto; font-size: 0.75rem; padding: 2px 6px; border-radius: 999px; background: #eee; color: #333; }
 
-/* En modo programación: todos se ven sin relleno... */
-.is-programming .legend-chip:not(.is-selected) .legend-chip__swatch {
-  background: transparent;
-}
-
-/* ...y el seleccionado se rellena. */
+/* Modo programación: feedback visual */
+.is-programming .legend-chip:not(.is-selected) .legend-chip__swatch { background: transparent; }
 .is-programming .legend-chip.is-selected .legend-chip__swatch {
   background: var(--chip-color);
   border-color: var(--chip-color);
 }
-
-/* Buen feedback visual cuando está seleccionado */
 .legend-chip.is-selected {
   border-color: var(--chip-color);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--chip-color) 28%, transparent);
 }
 
-/* Barra de acciones responsive */
-.actions-bar{
+/* Barra de acciones */
+.actions-bar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
   justify-content: end;
@@ -1928,13 +1864,8 @@ function shiftClassByTime(time) {
   margin: 8px 0 12px;
 }
 
-/* El popper no “engorda” el viewport */
-.v-popper__popper {
-  max-width: min(92vw, 460px);
-  contain: layout paint;
-}
-
-/* Contenido scrollable y seleccionable */
+/* Popper y tooltips */
+.v-popper__popper { max-width: min(92vw, 460px); contain: layout paint; }
 .content-tooltip-event,
 .content-tooltip-event1 {
   max-width: min(92vw, 460px);
@@ -1945,29 +1876,25 @@ function shiftClassByTime(time) {
   user-select: text;
 }
 
-/* En pantallas pequeñas: 2 columnas y botones a lo ancho */
-@media (max-width: 600px){
-  .actions-bar{
-    grid-template-columns: repeat(2, minmax(0,1fr));
+/* Scrollbar un poco más decente */
+.calendar-scroll::-webkit-scrollbar { height: 10px; }
+.calendar-scroll::-webkit-scrollbar-track { background: #f0f0f0; }
+.calendar-scroll::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 6px; }
+.calendar-scroll:hover::-webkit-scrollbar-thumb { background: #a8a8a8; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .actions-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: center;
   }
-  .actions-bar .q-btn{
-    width: 100%;
-  }
-}
-
-/* En móviles muy angostos, fila única apilada */
-@media (max-width: 420px){
-  .actions-bar{
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Mobile tweaks */
-@media (max-width: 600px) {
+  .actions-bar .q-btn { width: 100%; }
   .legend-grid {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     max-height: 40vh;
   }
+}
+@media (max-width: 420px) {
+  .actions-bar { grid-template-columns: 1fr; }
 }
 </style>
