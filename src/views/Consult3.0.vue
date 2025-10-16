@@ -984,45 +984,6 @@ function logProgrammingSelection() {
   console.log('Selección de programación:', JSON.parse(JSON.stringify(programmingSelections.value)));
 }
 
-function hasAnyEventInRange(eventsByMonth, fstartStr, fendStr) {
-  if (!eventsByMonth || typeof eventsByMonth !== 'object') return false;
-
-  // normaliza fechas de entrada
-  const toISO = (s) => (s || '').replace(/\//g, '-');
-  const rangeStart = new Date(toISO(fstartStr));
-  const rangeEnd   = new Date(toISO(fendStr));
-  if (Number.isNaN(rangeStart) || Number.isNaN(rangeEnd)) return false;
-
-  const clampDay = (v) => {
-    // v puede venir como 'YYYY-MM-DD' o Date
-    if (!v) return null;
-    if (v instanceof Date) return new Date(v.toISOString().split('T')[0]);
-    if (typeof v === 'string') {
-      const d = new Date(v.length === 10 ? v : toISO(v));
-      return Number.isNaN(d) ? null : new Date(d.toISOString().split('T')[0]);
-    }
-    return null;
-  };
-
-  // recorre todos los meses: { "06": [ev, ev], "07": [...] }
-  for (const monthKey of Object.keys(eventsByMonth)) {
-    const arr = Array.isArray(eventsByMonth[monthKey])
-      ? eventsByMonth[monthKey]
-      : [];
-
-    for (const ev of arr) {
-      const d = clampDay(ev?.start);
-      if (!d) continue;
-      // día dentro del rango [rangeStart, rangeEnd]
-      if (d >= new Date(rangeStart.toISOString().split('T')[0]) &&
-          d <= new Date(rangeEnd.toISOString().split('T')[0])) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 async function getFiches() {
   const res = await useFiches.getFilesActive();
   console.log(res.data);
@@ -1106,30 +1067,6 @@ async function getReport() {
         }
       }
 
-      legendInstructors.value = legendInstructors.value.filter((prof) =>
-    hasAnyEventInRange(prof.events, fStart.value, fEnd.value)
-  );
-
-  // Opcional: recompactar colores para que no queden huecos
-  resetAvailableColors();
-  legendInstructors.value = legendInstructors.value.map((p) => ({
-    ...p,
-    color: generateColor()
-  }));
-
-  // Si no queda nadie, apaga el modo programación y evita mostrar basura
-  if (!legendInstructors.value.length) {
-    programmingMode.value = false;
-    selectedInstructorId.value = null;
-    existInfo.value = false;
-    calendarOptions.value = [];
-    $q.notify({
-      type: 'warning',
-      message: 'No hay eventos en el rango seleccionado para el área.',
-    });
-    return;
-  }
-  
       generateCalendar();
     } else {
       let data = {
