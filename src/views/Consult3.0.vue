@@ -186,6 +186,25 @@
         "
       >
         <q-btn
+            v-if="shape === 'area' && existInfo"
+            label="Programar"
+            color="primary"
+            class="bg-green-7 text-white q-mr-md"
+            :outline="!programmingMode"
+            :unelevated="programmingMode"
+            :disable="legendInstructors.length === 0"
+            @click="toggleProgrammingMode"
+          />
+        <q-btn
+            v-if="shape === 'area' && existInfo"
+            label="Ver selección"
+            color="secondary"
+            class="bg-green-7 text-white q-mr-md"
+            :disable="!programmingSelections.length"
+            @click="logProgrammingSelection"
+          />
+        <q-btn
+          v-if="shape === 'instructor' && existInfo"
           label="Generar PDF"
           icon="print"
           class="bg-green-7 text-white q-mr-md"
@@ -193,25 +212,12 @@
         />
 
         <q-btn
+          v-if="shape === 'instructor' && existInfo"
           label="Generar excel"
           icon="print"
           class="bg-green-9 text-white q-mr-md"
           @click="saveExcel()"
         />
-
-        <q-btn
-          v-if="opcion == 'ficha' && role !== 'USER'"
-          label="Enviar"
-          icon="send"
-          class="bg-green-9 text-white q-mr-md"
-          @click="sendReport()"
-          :loading="isLoading"
-          :disable="isLoading"
-        >
-          <template v-slot:loading>
-            <q-spinner-oval color="white" size="1em" />
-          </template>
-        </q-btn>
 
         <q-btn
           label="Cancelar"
@@ -252,25 +258,6 @@
         </div>
       </div>
       <div class="te" v-if="shape === 'area' && existInfo">
-        <div class="legend-toolbar">
-          <q-btn
-            label="Programar"
-            color="primary"
-            size="sm"
-            :outline="!programmingMode"
-            :unelevated="programmingMode"
-            :disable="legendInstructors.length === 0"
-            @click="toggleProgrammingMode"
-          />
-        </div>
-        <q-btn
-            label="Ver selección"
-            color="secondary"
-            size="sm"
-            flat
-            :disable="!programmingSelections.length"
-            @click="logProgrammingSelection"
-          />
         <!-- <p>q-mt-md q-mb-lg flex items-center justify-center gap-3</p> -->
         <div
           v-for="p in legendInstructors"
