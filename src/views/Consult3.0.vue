@@ -179,54 +179,49 @@
     </q-form>
 
     <div class="row justify-center" v-if="existInfo">
-      <div
-        class="col-11 justify-end flex"
-        :class="
-          $q.screen.width < 600 ? 'justify-center q-gutter-sm' : 'justify-end'
-        "
-      >
-        <q-btn
-            v-if="shape === 'area' && existInfo"
-            label="Programar"
-            color="primary"
-            class="bg-green-7 text-white q-mr-md"
-            :outline="!programmingMode"
-            :unelevated="programmingMode"
-            :disable="legendInstructors.length === 0"
-            @click="toggleProgrammingMode"
-          />
-        <q-btn
-            v-if="shape === 'area' && existInfo"
-            label="Ver selección"
-            color="secondary"
-            class="bg-green-7 text-white q-mr-md"
-            :disable="!programmingSelections.length"
-            @click="logProgrammingSelection"
-          />
-        <q-btn
-          v-if="shape === 'instructor' && existInfo"
-          label="Generar PDF"
-          icon="print"
-          class="bg-green-7 text-white q-mr-md"
-          @click="exportCalender()"
-        />
-
-        <q-btn
-          v-if="shape === 'instructor' && existInfo"
-          label="Generar excel"
-          icon="print"
-          class="bg-green-9 text-white q-mr-md"
-          @click="saveExcel()"
-        />
-
-        <q-btn
-          label="Cancelar"
-          icon="cancel"
-          class="bg-red-5 text-white"
-          @click="cancel()"
-        />
-      </div>
+  <div class="col-11">
+    <div class="actions-bar">
+      <q-btn
+        v-if="shape === 'area' && existInfo"
+        label="Programar"
+        color="primary"
+        class="bg-green-7 text-white"
+        :outline="!programmingMode"
+        :unelevated="programmingMode"
+        :disable="legendInstructors.length === 0"
+        @click="toggleProgrammingMode"
+      />
+      <q-btn
+        v-if="shape === 'area' && existInfo"
+        label="Ver selección"
+        color="secondary"
+        class="bg-green-7 text-white"
+        :disable="!programmingSelections.length"
+        @click="logProgrammingSelection"
+      />
+      <q-btn
+        v-if="shape === 'instructor' && existInfo"
+        label="Generar PDF"
+        icon="print"
+        class="bg-green-7 text-white"
+        @click="exportCalender()"
+      />
+      <q-btn
+        v-if="shape === 'instructor' && existInfo"
+        label="Generar excel"
+        icon="print"
+        class="bg-green-9 text-white"
+        @click="saveExcel()"
+      />
+      <q-btn
+        label="Cancelar"
+        icon="cancel"
+        class="bg-red-5 text-white"
+        @click="cancel()"
+      />
     </div>
+  </div>
+</div>
 
     <div id="calenderPrint">
       <div class="row justify-center flex">
@@ -257,41 +252,54 @@
           </span>
         </div>
       </div>
-      <div class="te" v-if="shape === 'area' && existInfo">
-        <!-- <p>q-mt-md q-mb-lg flex items-center justify-center gap-3</p> -->
-        <div
-          v-for="p in legendInstructors"
-          :key="p.id"
-          class="flex items-center q-mr-md to legend-entry"
-        >
-          <template v-if="programmingMode">
-            <label class="legend-radio">
-              <input
-                class="legend-radio__input"
-                type="radio"
-                :value="p.id"
-                v-model="selectedInstructorId"
-              />
-              <span
-                class="legend-radio__dot"
-                :style="{
-                  borderColor: p.color,
-                  backgroundColor:
-                    selectedInstructorId === p.id ? p.color : 'transparent',
-                }"
-              ></span>
-              <span class="legend-radio__label">{{ p.name }}</span>
-            </label>
-          </template>
-          <template v-else>
-            <span
-              class="legend-color-dot"
-              :style="{ background: p.color }"
-            ></span>
-            <span class="text-caption">{{ p.name }}</span>
-          </template>
-        </div>
-      </div>
+      <div class="legend-wrapper" :class="{ 'is-programming': programmingMode }" v-if="shape === 'area' && existInfo">
+  <div class="legend-toolbar">
+    <q-input
+      v-model="legendQuery"
+      type="search"
+      dense
+      debounce="150"
+      clearable
+      placeholder="Filtrar instructores..."
+      class="legend-search"
+      :clear-value="''"
+      @keyup.esc="legendQuery = ''"
+    >
+      <template #prepend>
+        <q-icon name="search" />
+      </template>
+    </q-input>
+    <q-space />
+    <q-toggle v-model="denseLegend" label="Compacto" dense />
+  </div>
+
+  <div class="legend-grid">
+    <label
+      v-for="p in filteredLegend"
+      :key="p.id"
+      class="legend-chip"
+      :class="{
+        'is-selected': programmingMode && selectedInstructorId === p.id,
+        'is-compact': denseLegend
+      }"
+      :style="{ '--chip-color': p.color }"
+    >
+      <input
+        v-if="programmingMode"
+        class="legend-chip__radio"
+        type="radio"
+        :value="p.id"
+        v-model="selectedInstructorId"
+        aria-label="Seleccionar instructor"
+      />
+      <span class="legend-chip__swatch" aria-hidden="true"></span>
+      <span class="legend-chip__name q-truncate">{{ p.name }}</span>
+      <span v-if="typeof p._count === 'number'" class="legend-chip__count" title="Eventos en rango">
+        {{ p._count }}
+      </span>
+    </label>
+  </div>
+</div>
       <div
         class="time-legend q-ml-xl q-pt-xl column"
         style="position: fixed; left: 0; bottom: 10%"
@@ -345,6 +353,7 @@
         </div>
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-10 q-pb-lg q-mt-md justify-center flex">
+            <div class="calendar-scroll">
             <FullCalendar class="calender text-uppercase" :options="c">
               <template v-if="shape === 'area'" v-slot:eventContent="arg">
                 <div class="area-event">
@@ -353,12 +362,24 @@
                     class="area-event__dots"
                   >
                     <VMenu
-                      v-for="slot in arg.event.extendedProps.areaItems"
-                      :key="slot.slotKey"
-                      :autoHide="false"
-                      :delay="0"
-                      class="area-event__menu"
-                    >
+  v-for="slot in arg.event.extendedProps.areaItems"
+  :key="tooltipEpoch + '-' + slot.slotKey"
+  :triggers="['hover','focus']"
+  :popper-triggers="['hover','mouseleave','blur']"
+  :auto-hide="true"
+  :interactive="true"
+  :delay="{ show: 120, hide: 100 }"
+  strategy="fixed"
+  :distance="8"
+  placement="top"
+  :teleport="'body'"
+  :close-on-content-click="false"
+  :dispose-timeout="0"
+  :shown="openTooltipId === slot.slotKey"
+  @apply-show="openTooltipId = slot.slotKey"
+  @apply-hide="openTooltipId = (openTooltipId === slot.slotKey ? null : openTooltipId)"
+  class="area-event__menu"
+>
                     
                       <span
                         class="area-event__dot"
@@ -401,10 +422,23 @@
               >
 
                 <VMenu
-                  :autoHide="false"
-                  :delay="0"
-                  class="justify-center items-center customEvents"
-                >
+  :key="tooltipEpoch + '-' + (arg?.event?.id || arg?.event?.startStr || arg?.event?.title)"
+  :triggers="['hover','focus']"
+  :popper-triggers="['hover','mouseleave','blur']"
+  :auto-hide="true"
+  :interactive="true"
+  :delay="{ show: 120, hide: 100 }"
+  strategy="fixed"
+  :distance="8"
+  placement="top"
+  :teleport="'body'"
+  :close-on-content-click="false"
+  :dispose-timeout="0"
+  :shown="openTooltipId === (arg?.event?.id || arg?.event?.startStr || arg?.event?.title)"
+  @apply-show="openTooltipId = (arg?.event?.id || arg?.event?.startStr || arg?.event?.title)"
+  @apply-hide="openTooltipId = (openTooltipId === (arg?.event?.id || arg?.event?.startStr || arg?.event?.title) ? null : openTooltipId)"
+  class="justify-center items-center customEvents"
+>
                   <span>
                     <b>{{ arg.timeText }}</b>
                     <i>{{ arg.event.title }}</i></span
@@ -428,6 +462,7 @@
               </template>
             </FullCalendar>
           </div>
+          </div>
         </div>
       </div>
     </div>
@@ -435,7 +470,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, watch, computed } from 'vue';
+import { ref, onBeforeMount, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
@@ -562,6 +597,52 @@ let copyFilterInst = ref([]);
 let programmingMode = ref(false);
 let selectedInstructorId = ref(null);
 const programmingSelections = ref([]);
+
+const legendQuery = ref('');    // deja string por defecto, no null
+const denseLegend = ref(false);
+
+// cuál tooltip está abierto ahora mismo
+const openTooltipId = ref(null);
+
+// cierra todos al cambiar de tamaño/orientación (ya tenías epoch; esto convive)
+const tooltipEpoch = ref(0);
+const forceCloseTooltips = () => { 
+  openTooltipId.value = null; 
+  tooltipEpoch.value++; 
+};
+
+onMounted(() => {
+  window.addEventListener('resize', forceCloseTooltips, { passive: true });
+  window.addEventListener('orientationchange', forceCloseTooltips, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', forceCloseTooltips);
+  window.removeEventListener('orientationchange', forceCloseTooltips);
+});
+
+const sanitize = (s) =>
+  String(s ?? '')
+    .normalize('NFD')                       // quita acentos
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
+
+const filteredLegend = computed(() => {
+  const q = sanitize(legendQuery.value);
+  const base = Array.isArray(legendInstructors.value) ? legendInstructors.value : [];
+  if (!q) return base;                      // vacío => muestra todos
+  return base.filter(p => sanitize(p.name).includes(q));
+});
+
+function totalEventsByMonthMap(monthMap) {
+  if (!monthMap || typeof monthMap !== 'object') return 0;
+  let total = 0;
+  for (const v of Object.values(monthMap)) {
+    if (Array.isArray(v)) total += v.length;
+  }
+  return total;
+}
 
 const getAreaTooltipText = (value, fallback) => {
   if (value === null || value === undefined) {
@@ -783,6 +864,7 @@ watch(
 
     if (shape.value === 'area' && existInfo.value && hasMonths) {
       generateCalendar();
+      forceCloseTooltips();
     }
   },
   { flush: 'post' }
@@ -1059,7 +1141,8 @@ async function getReport() {
           prof.events = [];
 
           if (res?.status <= 201 && res.data?.events) {
-            prof.events = res.data.events; // aquí te llega { "06": [...], "07": [...] }
+            prof.events = res.data.events;
+            prof._count = totalEventsByMonthMap(prof.events); // aquí te llega { "06": [...], "07": [...] }
           }
         } catch (e) {
           // si falla, simplemente no tiene eventos
@@ -1068,6 +1151,7 @@ async function getReport() {
       }
 
       generateCalendar();
+      forceCloseTooltips();
     } else {
       let data = {
         instructor: inst.value.value,
@@ -1086,6 +1170,7 @@ async function getReport() {
         hoursWork2.value = res.data.hoursworkOthers;
         calculateMonthHours();
         generateCalendar();
+        forceCloseTooltips();
       }
     }
   } catch (error) {
@@ -1519,10 +1604,35 @@ function shiftClassByTime(time) {
 </script>
 
 <style>
-.calender {
-  width: 1000px !important;
-  height: 665px !important;
+:root{
+  /* Sube el mínimo para que NO se comprima en móviles */
+  --cal-min-width: 1300px;     /* ajusta a tu gusto: 1200-1600 suele ir bien */
+  --cal-height: 760px;         /* más alto = días con más aire */
 }
+
+/* Contenedor que habilita el scroll horizontal */
+.calendar-scroll{
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;          /* para tooltips que se salgan hacia abajo */
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;          /* deja espacio a la barra */
+}
+
+/* Estilo de la tabla-calendario */
+.calender{
+  /* No uses width:100% si quieres overflow; dale un mínimo y deja que se desborde */
+  min-width: var(--cal-min-width);
+  width: var(--cal-min-width);      /* se mantiene grande y el contenedor scrollea */
+  height: var(--cal-height);
+  margin-inline: auto;
+}
+
+/* Opcional: scrollbar un poco más decente */
+.calendar-scroll::-webkit-scrollbar { height: 10px; }
+.calendar-scroll::-webkit-scrollbar-track { background: #f0f0f0; }
+.calendar-scroll::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 6px; }
+.calendar-scroll:hover::-webkit-scrollbar-thumb { background: #a8a8a8; }
 
 .area-event {
   width: 100%;
@@ -1555,10 +1665,10 @@ function shiftClassByTime(time) {
   cursor: pointer;
 }
 
-/* por si FullCalendar intenta recortar el contenido del día */
-.fc-daygrid-day {
-  overflow: visible !important;
-}
+
+
+.fc-daygrid-day { overflow: hidden; }
+
 
 /* Leyenda de horarios */
 .time-legend {
@@ -1633,24 +1743,6 @@ function shiftClassByTime(time) {
     linear-gradient(to right, #fedd07, #6d83c9) border-box !important;
 } */
 
-.to {
-  width: 300px;
-}
-
-.te {
-  border: 1px solid black;
-  border-radius: 10px;
-  width: 90vw;
-  padding: 30px 10px 30px 60px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px;
-  position: relative;
-  left: 50%;
-  transform: translate(-50%);
-  margin-top: 30px;
-}
-
 .legend-toolbar {
   grid-column: 1 / -1;
   display: flex;
@@ -1703,5 +1795,179 @@ function shiftClassByTime(time) {
 .legend-radio__label {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+/* Contenedor general del legend */
+.legend-wrapper {
+  border: 1px solid rgba(0,0,0,.2);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  max-width: 1200px;
+  margin: 20px auto 0;
+}
+
+/* Barra superior: buscador y toggle */
+.legend-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.legend-search {
+  width: min(420px, 100%);
+}
+
+/* Grid fluido y accesible */
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 12px;
+  max-height: clamp(180px, 36vh, 320px);
+  overflow-y: auto;
+  padding-right: 4px; /* deja respirar la barra de scroll */
+}
+
+/* Chip del instructor */
+.legend-chip {
+  --chip-color: #999; /* fallback */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 999px;
+  background: #fafafa;
+  min-width: 0;
+  transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+}
+
+.legend-chip:hover {
+  background: #f3f3f3;
+}
+
+.legend-chip.is-selected {
+  border-color: var(--chip-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--chip-color) 28%, transparent);
+}
+
+/* Modo compacto: menos padding y tipografía ajustada */
+.legend-chip.is-compact {
+  padding: 6px 10px;
+}
+
+.legend-chip__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.legend-chip__swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--chip-color);
+  outline: 2px solid rgba(0,0,0,.06);
+}
+
+.legend-chip__name {
+  font-size: .875rem;
+  font-weight: 500;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legend-chip__count {
+  margin-left: auto;
+  font-size: .75rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eee;
+  color: #333;
+}
+
+/* El swatch por defecto (fuera de programación) sigue relleno */
+.legend-chip__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--chip-color);
+  border: 2px solid var(--chip-color);
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+/* En modo programación: todos se ven sin relleno... */
+.is-programming .legend-chip:not(.is-selected) .legend-chip__swatch {
+  background: transparent;
+}
+
+/* ...y el seleccionado se rellena. */
+.is-programming .legend-chip.is-selected .legend-chip__swatch {
+  background: var(--chip-color);
+  border-color: var(--chip-color);
+}
+
+/* Buen feedback visual cuando está seleccionado */
+.legend-chip.is-selected {
+  border-color: var(--chip-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--chip-color) 28%, transparent);
+}
+
+/* Barra de acciones responsive */
+.actions-bar{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+  justify-content: end;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 8px 0 12px;
+}
+
+/* El popper no “engorda” el viewport */
+.v-popper__popper {
+  max-width: min(92vw, 460px);
+  contain: layout paint;
+}
+
+/* Contenido scrollable y seleccionable */
+.content-tooltip-event,
+.content-tooltip-event1 {
+  max-width: min(92vw, 460px);
+  max-height: min(60vh, 420px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 10px;
+  user-select: text;
+}
+
+/* En pantallas pequeñas: 2 columnas y botones a lo ancho */
+@media (max-width: 600px){
+  .actions-bar{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    justify-content: center;
+  }
+  .actions-bar .q-btn{
+    width: 100%;
+  }
+}
+
+/* En móviles muy angostos, fila única apilada */
+@media (max-width: 420px){
+  .actions-bar{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile tweaks */
+@media (max-width: 600px) {
+  .legend-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    max-height: 40vh;
+  }
 }
 </style>
