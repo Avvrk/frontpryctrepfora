@@ -482,6 +482,7 @@ import { storeEnv } from "../store/Environments.js";
 import { storeInst } from "../store/Instructors.js";
 import { storeFiles } from "../store/Files.js";
 import { storeResult } from "../store/Results.js";
+import { useProgrammingSelectionStore } from "../store/ProgrammingSelection.js";
 import BtnBack from "../layouts/btnBackLayout.vue";
 
 const useSchedules = storeSche();
@@ -491,6 +492,7 @@ const useEnv = storeEnv();
 const useInst = storeInst();
 const useFiles = storeFiles();
 const useResult = storeResult();
+const programmingSelectionStore = useProgrammingSelectionStore();
 const $q = useQuasar();
 
 const $router = useRouter();
@@ -527,6 +529,15 @@ let filterOptionsEnvi = ref([]);
 let filterOptionsResult = ref([]);
 let loading = ref(false);
 let loadingPrev = ref(false);
+
+onMounted(() => {
+  if (programmingSelectionStore.selection) {
+    console.log(
+      "Selección de programación recibida en NewSchedule:",
+      programmingSelectionStore.selection
+    );
+  }
+});
 
 onBeforeMount(async () => {
   //capturar el params de la url

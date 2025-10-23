@@ -521,6 +521,7 @@ import {
 import { storeFiles } from '../store/Files.js';
 import { storeInst } from '../store/Instructors.js';
 import { storeReport } from '../store/Reports.js';
+import { useProgrammingSelectionStore } from '../store/ProgrammingSelection.js';
 import { useQuasar } from 'quasar';
 import { jsPDF } from 'jspdf';
 import { useRouter } from 'vue-router';
@@ -546,6 +547,7 @@ const shape = ref('instructor');
 const useFiches = storeFiles();
 const useInstructors = storeInst();
 const useEnvir = storeEnv();
+const programmingSelectionStore = useProgrammingSelectionStore();
 // is role USER
 const useUser = storeUser();
 const role = ref(useUser.getRole());
@@ -1117,16 +1119,25 @@ function clearProgrammingSelection() {
   programmingSelections.value = [];
 }
 
-function logProgrammingSelection() {
+async function logProgrammingSelection() {
   if (!programmingSelections.value.length) {
     console.log('No hay selección de programación registrada.');
     return;
   }
 
-  console.log(
-    'Selección de programación:',
-    JSON.parse(JSON.stringify(programmingSelections.value))
+  const selectionPayload = JSON.parse(
+    JSON.stringify(programmingSelections.value)
   );
+
+  programmingSelectionStore.setSelection(selectionPayload);
+
+  console.log('Selección de programación:', selectionPayload);
+
+  try {
+    await router.push({ name: 'newSchedule' });
+  } catch (error) {
+    console.error('No fue posible navegar a la programación:', error);
+  }
 }
 
 async function getFiches() {
