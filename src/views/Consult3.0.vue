@@ -1133,8 +1133,60 @@ async function logProgrammingSelection() {
 
   console.log('Selección de programación:', selectionPayload);
 
+  const selectValidEntry = (list) => {
+    if (!Array.isArray(list) || !list.length) return null;
+    if (list.length === 1) return list[0];
+    const current = list.find(
+      (item) => item?.instructorId === selectedInstructorId.value
+    );
+    if (current && Array.isArray(current.dates) && current.dates.length) {
+      return current;
+    }
+    return list.find(
+      (item) => Array.isArray(item?.dates) && item.dates.length > 0
+    );
+  };
+
+  const selectedEntry = selectValidEntry(selectionPayload);
+  const autoPayload = selectedEntry
+    ? {
+        instructor: {
+          id: selectedEntry.instructorId,
+          name: selectedEntry.instructorName,
+        },
+        diasProgramar: [...selectedEntry.dates],
+      }
+    : null;
+
+  const queryPayload = autoPayload
+    ? (() => {
+        try {
+          return encodeURIComponent(JSON.stringify(autoPayload));
+        } catch (error) {
+          console.warn('No fue posible serializar el payload automático.', error);
+          return null;
+        }
+      })()
+    : null;
+
   try {
-    await router.push({ name: 'newSchedule' });
+    if (autoPayload) {
+      await router.push({
+        name: 'newSchedule',
+        state: {
+          autoFrom: 'consult30',
+          payload: autoPayload,
+        },
+        query: queryPayload
+          ? {
+              autoFrom: 'consult30',
+              payload: queryPayload,
+            }
+          : undefined,
+      });
+    } else {
+      await router.push({ name: 'newSchedule' });
+    }
   } catch (error) {
     console.error('No fue posible navegar a la programación:', error);
   }

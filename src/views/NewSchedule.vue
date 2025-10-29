@@ -133,6 +133,7 @@
                       getInstructors();
                       clearDataCalender();
                     "
+                    :disable="isAuto"
                   >
                     <template v-slot:prepend>
                       <span class="material-symbols-outlined"> person </span>
@@ -200,124 +201,127 @@
                     </template>
                   </q-select>
 
-                  <q-input
-                    dense
-                    v-model="fStart"
-                    mask="date"
-                    :rules="['date']"
-                    lazy-rules
-                    label="Fecha Inicio"
-                    @update:model-value="clearDataCalender()"
-                  >
-                    <template v-slot:append>
-                      <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy
-                          cover
-                          transition-show="scale"
-                          transition-hide="scale"
-                        >
-                          <q-date v-model="fStart" minimal>
-                            <div class="row items-center justify-end">
-                              <q-btn
-                                v-close-popup
-                                label="Close"
-                                color="primary"
-                                flat
-                              />
-                            </div>
-                          </q-date>
-                        </q-popup-proxy>
-                      </q-icon>
-                    </template>
-                    <template v-slot:prepend>
-                      <span class="material-symbols-outlined"> today </span>
-                    </template>
-                  </q-input>
-
-                  <q-input
-                    dense
-                    v-model="fEnd"
-                    mask="date"
-                    label="Fecha Fin"
-                    :rules="['date']"
-                    lazy-rules
-                    @update:model-value="clearDataCalender()"
-                  >
-                    <template v-slot:append>
-                      <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy
-                          cover
-                          transition-show="scale"
-                          transition-hide="scale"
-                        >
-                          <q-date v-model="fEnd" minimal>
-                            <div class="row items-center justify-end">
-                              <q-btn
-                                v-close-popup
-                                label="Close"
-                                color="primary"
-                                flat
-                              />
-                            </div>
-                          </q-date>
-                        </q-popup-proxy>
-                      </q-icon>
-                    </template>
-                    <template v-slot:prepend>
-                      <span class="material-symbols-outlined"> event </span>
-                    </template>
-                  </q-input>
-
-                  <q-input
-                    v-model="timeStart"
-                    type="time"
-                    label="Hora inicio"
-                    @update:model-value="clearDataCalender()"
-                    dense
-                    lazy-rules
-                    :rules="[
-                      (val) =>
-                        ((val) => val !== null && val !== '') ||
-                        'El campo es requerido',
-                    ]"
-                  >
-                    <template v-slot:prepend>
-                      <span class="material-symbols-outlined"> alarm </span>
-                    </template>
-                  </q-input>
-
-                  <q-input
-                    v-model="timeEnd"
-                    type="time"
-                    label="Hora fin"
-                    dense
-                    lazy-rules
-                    :rules="[
-                      (val) =>
-                        ((val) => val !== null && val !== '') ||
-                        'El campo es requerido',
-                    ]"
-                    @update:model-value="clearDataCalender()"
-                  >
-                    <template v-slot:prepend>
-                      <span class="material-symbols-outlined"> timer_off </span>
-                    </template>
-                  </q-input>
-
-                  <div class="justify-center flex bg-grey-3 q-mb-md">
-                    <q-checkbox
-                      class="text-black"
-                      v-for="(i, index) in days"
-                      :key="index"
-                      v-model="selectDays"
-                      :val="i.value"
-                      :label="i.label"
+                  <template v-if="!isAuto"> 
+                    <q-input
+                      dense
+                      v-model="fStart"
+                      mask="date"
+                      :rules="['date']"
+                      lazy-rules
+                      label="Fecha Inicio"
                       @update:model-value="clearDataCalender()"
-                    />
-                  </div>
+                    >
+                      <template v-slot:append>
+                        <q-icon name="event" class="cursor-pointer">
+                          <q-popup-proxy
+                            cover
+                            transition-show="scale"
+                            transition-hide="scale"
+                          >
+                            <q-date v-model="fStart" minimal>
+                              <div class="row items-center justify-end">
+                                <q-btn
+                                  v-close-popup
+                                  label="Close"
+                                  color="primary"
+                                  flat
+                                />
+                              </div>
+                            </q-date>
+                          </q-popup-proxy>
+                        </q-icon>
+                      </template>
+                      <template v-slot:prepend>
+                        <span class="material-symbols-outlined"> today </span>
+                      </template>
+                    </q-input>
+
+                    <q-input
+                      dense
+                      v-model="fEnd"
+                      mask="date"
+                      label="Fecha Fin"
+                      :rules="['date']"
+                      lazy-rules
+                      @update:model-value="clearDataCalender()"
+                    >
+                      <template v-slot:append>
+                        <q-icon name="event" class="cursor-pointer">
+                          <q-popup-proxy
+                            cover
+                            transition-show="scale"
+                            transition-hide="scale"
+                          >
+                            <q-date v-model="fEnd" minimal>
+                              <div class="row items-center justify-end">
+                                <q-btn
+                                  v-close-popup
+                                  label="Close"
+                                  color="primary"
+                                  flat
+                                />
+                              </div>
+                            </q-date>
+                          </q-popup-proxy>
+                        </q-icon>
+                      </template>
+                      <template v-slot:prepend>
+                        <span class="material-symbols-outlined"> event </span>
+                      </template>
+                    </q-input>
+
+                    <q-input
+                      v-model="timeStart"
+                      type="time"
+                      label="Hora inicio"
+                      @update:model-value="clearDataCalender()"
+                      dense
+                      lazy-rules
+                      :rules="[
+                        (val) =>
+                          ((val) => val !== null && val !== '') ||
+                          'El campo es requerido',
+                      ]"
+                    >
+                      <template v-slot:prepend>
+                        <span class="material-symbols-outlined"> alarm </span>
+                      </template>
+                    </q-input>
+
+                    <q-input
+                      v-model="timeEnd"
+                      type="time"
+                      label="Hora fin"
+                      dense
+                      lazy-rules
+                      :rules="[
+                        (val) =>
+                          ((val) => val !== null && val !== '') ||
+                          'El campo es requerido',
+                      ]"
+                      @update:model-value="clearDataCalender()"
+                    >
+                      <template v-slot:prepend>
+                        <span class="material-symbols-outlined"> timer_off </span>
+                      </template>
+                    </q-input>
+
+                    <div class="justify-center flex bg-grey-3 q-mb-md">
+                      <q-checkbox
+                        class="text-black"
+                        v-for="(i, index) in days"
+                        :key="index"
+                        v-model="selectDays"
+                        :val="i.value"
+                        :label="i.label"
+                        @update:model-value="clearDataCalender()"
+                      />
+                    </div>
+                  </template>
 
                   <div class="justify-center flex">
                     <q-btn
+                      v-if="!isAuto"
                       type="submit"
                       :loading="loadingPrev"
                       :disable="loadingPrev"
@@ -471,7 +475,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 
 //stores
@@ -485,6 +489,25 @@ import { storeResult } from "../store/Results.js";
 import { useProgrammingSelectionStore } from "../store/ProgrammingSelection.js";
 import BtnBack from "../layouts/btnBackLayout.vue";
 
+function getAutoPayload(route) {
+  const from = route?.state?.autoFrom || route?.query?.autoFrom;
+  let payload = route?.state?.payload;
+
+  if (!payload && route?.query?.payload) {
+    try {
+      payload = JSON.parse(decodeURIComponent(route.query.payload));
+    } catch (error) {
+      console.warn(
+        "[NewSchedule] auto mode: payload inválido en query; se ignora.",
+        error
+      );
+      payload = null;
+    }
+  }
+
+  return { from, payload };
+}
+
 const useSchedules = storeSche();
 const useOtherSchedules = storeOtherSche();
 const useComp = storeComp();
@@ -496,6 +519,76 @@ const programmingSelectionStore = useProgrammingSelectionStore();
 const $q = useQuasar();
 
 const $router = useRouter();
+const route = useRoute();
+
+const { from: initialAutoFrom, payload: initialAutoPayload } = getAutoPayload(route);
+const autoFrom = ref(initialAutoFrom);
+const autoPayload = ref(initialAutoPayload ?? null);
+
+function extractAutoInstructor(info) {
+  if (!info || typeof info !== "object") return null;
+  const id =
+    info.id ?? info._id ?? info.value ?? info.uuid ?? info.identifier ?? null;
+  if (!id) return null;
+  const name =
+    info.name ?? info.nombre ?? info.label ?? info.title ?? String(id);
+  return { id, name };
+}
+
+function normalizeIsoDate(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const date = new Date(`${trimmed}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return trimmed;
+}
+
+function getSortedUniqueDays(list) {
+  if (!Array.isArray(list)) return [];
+  const unique = new Set();
+  list.forEach((value) => {
+    const normalized = normalizeIsoDate(value);
+    if (normalized) {
+      unique.add(normalized);
+    }
+  });
+  return Array.from(unique).sort((a, b) => a.localeCompare(b));
+}
+
+function parseIsoDate(iso) {
+  const normalized = normalizeIsoDate(iso);
+  if (!normalized) return null;
+  const date = new Date(`${normalized}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function computeDayNumbers(days) {
+  if (!Array.isArray(days)) return [];
+  return Array.from(
+    new Set(
+      days
+        .map((iso) => {
+          const parsed = parseIsoDate(iso);
+          return parsed !== null ? parsed.getDay() : null;
+        })
+        .filter((day) => day !== null)
+    )
+  );
+}
+
+const hasAutoPayload = computed(() => {
+  const payload = autoPayload.value;
+  if (!payload) return false;
+  const instructorInfo = extractAutoInstructor(payload.instructor);
+  const days = getSortedUniqueDays(payload.diasProgramar);
+  return !!(instructorInfo && days.length);
+});
+
+const isAuto = computed(
+  () => autoFrom.value === "consult30" && hasAutoPayload.value
+);
 
 let formCalender = ref();
 let fiche = ref("");
@@ -536,6 +629,16 @@ onMounted(() => {
       "Selección de programación recibida en NewSchedule:",
       programmingSelectionStore.selection
     );
+  }
+
+  if (autoFrom.value === "consult30" && !hasAutoPayload.value) {
+    console.warn(
+      "[NewSchedule] auto mode: payload incompleto; usando modo normal."
+    );
+  }
+
+  if (isAuto.value && !isEdit.value) {
+    applyAutoMode();
   }
 });
 
@@ -632,6 +735,7 @@ let calendarOptions = ref({
     left: "title",
   },
   droppable: true,
+  events: [],
 });
 
 function handleEventClick(clickInfo) {
@@ -682,6 +786,78 @@ function handleEventClick(clickInfo) {
 
     diasProgramados.value.splice(indexEvent, 1);
   }
+}
+
+function setDiasEnCalendario(diasISO = [], instructorInfo) {
+  if (!Array.isArray(diasISO) || !calendarOptions.value) {
+    return;
+  }
+
+  const events = diasISO.map((date, index) => ({
+    id: `auto-${date}-${index}`,
+    title: instructorInfo?.name || "Programación",
+    start: date,
+    end: date,
+    allDay: true,
+    extendedProps: {
+      autogenerated: true,
+      idInstructor: instructorInfo?.id ?? null,
+      instructor: instructorInfo?.name || "",
+      tstart: timeStart.value ?? null,
+      tend: timeEnd.value ?? null,
+      type: 0,
+    },
+  }));
+
+  diasProgramados.value = events;
+  calendarOptions.value.events = [...events];
+
+  if (diasISO.length) {
+    calendarOptions.value.initialDate = diasISO[0];
+  }
+}
+
+function applyAutoMode() {
+  if (!hasAutoPayload.value || isEdit.value) {
+    return;
+  }
+
+  const payload = autoPayload.value || {};
+  const instructorInfo = extractAutoInstructor(payload.instructor);
+  const days = getSortedUniqueDays(payload.diasProgramar);
+
+  if (instructorInfo) {
+    instructor.value = {
+      label: instructorInfo.name,
+      value: instructorInfo.id,
+    };
+  }
+
+  if (!days.length) {
+    return;
+  }
+
+  fStart.value = days[0];
+  fEnd.value = days[days.length - 1];
+  selectDays.value = computeDayNumbers(days);
+
+  if (typeof payload.timeStart === "string") {
+    timeStart.value = payload.timeStart;
+  }
+
+  if (typeof payload.timeEnd === "string") {
+    timeEnd.value = payload.timeEnd;
+  }
+
+  if (!timeStart.value) {
+    timeStart.value = "00:00";
+  }
+
+  if (!timeEnd.value) {
+    timeEnd.value = "23:59";
+  }
+
+  setDiasEnCalendario(days, instructorInfo);
 }
 
 // -------------------- codigo principal --------------------
@@ -878,6 +1054,10 @@ async function updateData() {
 }
 
 const clearDataCalender = () => {
+  if (isAuto.value) {
+    return;
+  }
+
   calendarOptions.value.events = [];
   diasProgramados.value = [];
 };
