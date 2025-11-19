@@ -466,7 +466,7 @@
 import { ref, onBeforeMount } from "vue";
 import { storeFiles } from "../../store/Files.js";
 import { storeCoor } from "../../store/Coordination.js";
-import { storeReportNew } from "../../store/ReportNews.js";
+import { storeReportNew } from "../../store/reportNews.js";
 
 import BtnBack from "../../layouts/btnBackLayout.vue";
 import HeaderLayout from "../../layouts/headerViewsLayout.vue";
