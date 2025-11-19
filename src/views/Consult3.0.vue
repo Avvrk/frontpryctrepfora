@@ -273,8 +273,6 @@
               <q-icon name="search" />
             </template>
           </q-input>
-          <q-space />
-          <q-toggle v-model="denseLegend" label="Compacto" dense />
         </div>
 
         <div class="legend-grid">
@@ -284,7 +282,6 @@
             class="legend-chip"
             :class="{
               'is-selected': programmingMode && selectedInstructorId === p.id,
-              'is-compact': denseLegend,
             }"
             :style="{ '--chip-color': p.color }"
           >
@@ -362,146 +359,153 @@
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-12 col-xl-10 q-pb-lg q-mt-md justify-center flex">
             <div class="calendar-frame">
-            <div class="calendar-scroll">
-              <FullCalendar class="calender text-uppercase" :options="c">
-                <template v-if="shape === 'area'" v-slot:eventContent="arg">
-                  <div class="area-event">
-                    <div
-                      v-if="arg.event.extendedProps.areaItems.length"
-                      class="area-event__dots"
-                    >
-                      <VMenu
-                        v-for="slot in arg.event.extendedProps.areaItems"
-                        :key="tooltipEpoch + '-' + slot.slotKey"
-                        :triggers="['hover', 'focus']"
-                        :popper-triggers="['hover', 'mouseleave', 'blur']"
-                        :auto-hide="true"
-                        :interactive="true"
-                        :delay="{ show: 120, hide: 100 }"
-                        strategy="fixed"
-                        :distance="8"
-                        placement="top"
-                        :teleport="'body'"
-                        :close-on-content-click="false"
-                        :dispose-timeout="0"
-                        :shown="openTooltipId === slot.slotKey"
-                        @apply-show="openTooltipId = slot.slotKey"
-                        @apply-hide="
-                          openTooltipId =
-                            openTooltipId === slot.slotKey
-                              ? null
-                              : openTooltipId
-                        "
-                        class="area-event__menu"
+              <div class="calendar-scroll">
+                <FullCalendar class="calender text-uppercase" :options="c">
+                  <template v-if="shape === 'area'" v-slot:eventContent="arg">
+                    <div class="area-event">
+                      <div
+                        v-if="arg.event.extendedProps.areaItems.length"
+                        class="area-event__dots"
                       >
-                        <span
-                          class="area-event__dot"
-                          :style="{ backgroundColor: slot.color }"
-                          >{{ slot.instructor.charAt(0).toUpperCase() }}</span
+                        <VMenu
+                          v-for="slot in arg.event.extendedProps.areaItems"
+                          :key="tooltipEpoch + '-' + slot.slotKey"
+                          :triggers="['hover', 'focus']"
+                          :popper-triggers="['hover', 'mouseleave', 'blur']"
+                          :auto-hide="true"
+                          :interactive="true"
+                          :delay="{ show: 120, hide: 100 }"
+                          strategy="fixed"
+                          :distance="8"
+                          placement="top"
+                          :teleport="'body'"
+                          :close-on-content-click="false"
+                          :dispose-timeout="0"
+                          :shown="openTooltipId === slot.slotKey"
+                          @apply-show="openTooltipId = slot.slotKey"
+                          @apply-hide="
+                            openTooltipId =
+                              openTooltipId === slot.slotKey
+                                ? null
+                                : openTooltipId
+                          "
+                          class="area-event__menu"
                         >
+                          <span
+                            class="area-event__dot"
+                            :style="{ backgroundColor: slot.color }"
+                            >{{ slot.instructor.charAt(0).toUpperCase() }}</span
+                          >
 
-                        <template #popper>
-                          <div class="content-tooltip-event1">
-                            <p>
-                              INSTRUCTOR:
-                              {{
-                                getAreaTooltipText(
-                                  slot.instructor,
-                                  'Sin instructor'
-                                )
-                              }}
-                            </p>
-                            <p>
-                              FICHA:
-                              {{ getAreaTooltipText(slot.fiche, 'Sin ficha') }}
-                            </p>
-                            <p>
-                              AMBIENTE:
-                              {{
-                                getAreaTooltipText(
-                                  slot.environment,
-                                  'Sin ambiente'
-                                )
-                              }}
-                            </p>
-                          </div>
-                        </template>
-                      </VMenu>
+                          <template #popper>
+                            <div class="content-tooltip-event1">
+                              <p>
+                                INSTRUCTOR:
+                                {{
+                                  getAreaTooltipText(
+                                    slot.instructor,
+                                    'Sin instructor'
+                                  )
+                                }}
+                              </p>
+                              <p>
+                                FICHA:
+                                {{
+                                  getAreaTooltipText(slot.fiche, 'Sin ficha')
+                                }}
+                              </p>
+                              <p>
+                                AMBIENTE:
+                                {{
+                                  getAreaTooltipText(
+                                    slot.environment,
+                                    'Sin ambiente'
+                                  )
+                                }}
+                              </p>
+                            </div>
+                          </template>
+                        </VMenu>
+                      </div>
                     </div>
-                  </div>
-                </template>
-                <template
-                  v-else-if="opcion == 'instructor'"
-                  v-slot:eventContent="arg"
-                >
-                  <VMenu
-                    :key="
-                      tooltipEpoch +
-                      '-' +
-                      (arg?.event?.id ||
-                        arg?.event?.startStr ||
-                        arg?.event?.title)
-                    "
-                    :triggers="['hover', 'focus']"
-                    :popper-triggers="['hover', 'mouseleave', 'blur']"
-                    :auto-hide="true"
-                    :interactive="true"
-                    :delay="{ show: 120, hide: 100 }"
-                    strategy="fixed"
-                    :distance="8"
-                    placement="top"
-                    :teleport="'body'"
-                    :close-on-content-click="false"
-                    :dispose-timeout="0"
-                    :shown="
-                      openTooltipId ===
-                      (arg?.event?.id ||
-                        arg?.event?.startStr ||
-                        arg?.event?.title)
-                    "
-                    @apply-show="
-                      openTooltipId =
-                        arg?.event?.id ||
-                        arg?.event?.startStr ||
-                        arg?.event?.title
-                    "
-                    @apply-hide="
-                      openTooltipId =
+                  </template>
+                  <template
+                    v-else-if="opcion == 'instructor'"
+                    v-slot:eventContent="arg"
+                  >
+                    <VMenu
+                      :key="
+                        tooltipEpoch +
+                        '-' +
+                        (arg?.event?.id ||
+                          arg?.event?.startStr ||
+                          arg?.event?.title)
+                      "
+                      :triggers="['hover', 'focus']"
+                      :popper-triggers="['hover', 'mouseleave', 'blur']"
+                      :auto-hide="true"
+                      :interactive="true"
+                      :delay="{ show: 120, hide: 100 }"
+                      strategy="fixed"
+                      :distance="8"
+                      placement="top"
+                      :teleport="'body'"
+                      :close-on-content-click="false"
+                      :dispose-timeout="0"
+                      :shown="
                         openTooltipId ===
                         (arg?.event?.id ||
                           arg?.event?.startStr ||
                           arg?.event?.title)
-                          ? null
-                          : openTooltipId
-                    "
-                    class="justify-center items-center customEvents"
-                  >
-                    <span>
-                      <b>{{ arg.timeText }}</b>
-                      <i>{{ arg.event.title }}</i></span
+                      "
+                      @apply-show="
+                        openTooltipId =
+                          arg?.event?.id ||
+                          arg?.event?.startStr ||
+                          arg?.event?.title
+                      "
+                      @apply-hide="
+                        openTooltipId =
+                          openTooltipId ===
+                          (arg?.event?.id ||
+                            arg?.event?.startStr ||
+                            arg?.event?.title)
+                            ? null
+                            : openTooltipId
+                      "
+                      class="justify-center items-center customEvents"
                     >
+                      <span>
+                        <b>{{ arg.timeText }}</b>
+                        <i>{{ arg.event.title }}</i></span
+                      >
 
-                    <template #popper>
-                      <div class="content-tooltip-event">
-                        <p>FICHA: {{ arg.event.title }}</p>
-                        <p>
-                          AMBIENTE: {{ arg.event.extendedProps.environment }}
-                        </p>
-                        <p>PROGRAMA: {{ arg.event.extendedProps.program }}</p>
-                        <p>RESULTADO: {{ arg.event.extendedProps.outcome }}</p>
-                        <p>NOTA: {{ arg.event.extendedProps.supporttext }}</p>
-                        <p>
-                          OBSERVACIÓN: {{ arg.event.extendedProps.observation }}
-                        </p>
-                        <p>HORA INICIO: {{ arg.event.extendedProps.tstart }}</p>
-                        <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
-                      </div>
-                    </template>
-                  </VMenu>
-                </template>
-              </FullCalendar>
+                      <template #popper>
+                        <div class="content-tooltip-event">
+                          <p>FICHA: {{ arg.event.title }}</p>
+                          <p>
+                            AMBIENTE: {{ arg.event.extendedProps.environment }}
+                          </p>
+                          <p>PROGRAMA: {{ arg.event.extendedProps.program }}</p>
+                          <p>
+                            RESULTADO: {{ arg.event.extendedProps.outcome }}
+                          </p>
+                          <p>NOTA: {{ arg.event.extendedProps.supporttext }}</p>
+                          <p>
+                            OBSERVACIÓN:
+                            {{ arg.event.extendedProps.observation }}
+                          </p>
+                          <p>
+                            HORA INICIO: {{ arg.event.extendedProps.tstart }}
+                          </p>
+                          <p>HORA FIN: {{ arg.event.extendedProps.tend }}</p>
+                        </div>
+                      </template>
+                    </VMenu>
+                  </template>
+                </FullCalendar>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -648,7 +652,6 @@ let selectedInstructorId = ref(null);
 const programmingSelections = ref([]);
 
 const legendQuery = ref(''); // deja string por defecto, no null
-const denseLegend = ref(false);
 
 // cuál tooltip está abierto ahora mismo
 const openTooltipId = ref(null);
@@ -670,6 +673,32 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', forceCloseTooltips);
   window.removeEventListener('orientationchange', forceCloseTooltips);
+});
+
+watch(
+  () => programmingSelections.value,
+  () => {
+    if (shape.value === 'area' && existInfo.value && yearsMonth.value?.length) {
+      generateCalendar();
+      forceCloseTooltips();
+    }
+  },
+  { deep: true }
+);
+
+const selectedInstructorColor = computed(() => {
+  const i = Array.isArray(legendInstructors.value)
+    ? legendInstructors.value.find((it) => it.id === selectedInstructorId.value)
+    : null;
+  return i?.color || '#3A86FF'; // fallback decente
+});
+
+const selectedDatesSet = computed(() => {
+  if (!programmingMode.value || !selectedInstructorId.value) return new Set();
+  const entry = programmingSelections.value?.find(
+    (x) => x.instructorId === selectedInstructorId.value
+  );
+  return new Set(entry?.dates || []);
 });
 
 const sanitize = (s) =>
@@ -1053,15 +1082,73 @@ function generateCalendar() {
       },
       eventOrder: 'order',
       events,
+      dayCellClassNames: (arg) => {
+        // Solo pintamos en modo área + programación + instructor elegido
+        if (
+          !(
+            shape.value === 'area' &&
+            programmingMode.value &&
+            selectedInstructorId.value
+          )
+        ) {
+          return [];
+        }
+        const key = arg.date.toLocaleDateString('sv-SE'); // YYYY-MM-DD
+        return selectedDatesSet.value.has(key) ? ['is-picked'] : [];
+      },
+      dayCellDidMount: (arg) => {
+        // Inyecta el color del instructor para esa celda (si aplica)
+        if (
+          shape.value === 'area' &&
+          programmingMode.value &&
+          selectedInstructorId.value
+        ) {
+          arg.el.style.setProperty(
+            '--picked-color',
+            selectedInstructorColor.value
+          );
+        }
+      },
     };
 
     if (shape.value === 'area') {
+      // 1) Selección solo cuando tiene sentido
+      calendarConfig.selectable =
+        programmingMode.value && !!selectedInstructorId.value;
+
+      // 2) Evita que el overlay/higlight haga de las suyas
+      calendarConfig.selectMirror = false;
+      calendarConfig.unselectAuto = false;
+      calendarConfig.longPressDelay = 320; // móvil
+      calendarConfig.selectMinDistance = 6; // require arrastre real para rango
+
+      // 3) Rango (arrastrar): sigue usando select SOLO si lo necesitas
       calendarConfig.selectAllow = () =>
         programmingMode.value && !!selectedInstructorId.value;
-      calendarConfig.select = (selectionInfo) => {
+
+      calendarConfig.select = (info) => {
         if (programmingMode.value && selectedInstructorId.value) {
-          handleAreaDateSelect(selectionInfo);
+          // si quieres soportar arrastre, déjalo
+          handleAreaDateSelect(info);
         }
+      };
+
+      // 4) Click simple: togglear un solo día sin overlay
+      calendarConfig.dateClick = (info) => {
+        if (!(programmingMode.value && selectedInstructorId.value)) return;
+
+        const start = new Date(
+          info.date.getFullYear(),
+          info.date.getMonth(),
+          info.date.getDate()
+        );
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+
+        // micro pausa para dejar pintar antes de mutar estado reactivo
+        requestAnimationFrame(() => {
+          handleAreaDateSelect({ start, end });
+        });
       };
     }
 
@@ -1110,7 +1197,7 @@ function handleAreaDateSelect(selectionInfo) {
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  sel.dates.sort((a, b) => a.localeCompare(b));
+  // sel.dates.sort((a, b) => a.localeCompare(b));
   // limpia instructores sin fechas
   programmingSelections.value = list.filter((x) => x.dates.length);
 }
@@ -1127,7 +1214,10 @@ async function logProgrammingSelection() {
 
   const selectionPayload = JSON.parse(
     JSON.stringify(programmingSelections.value)
-  );
+  ).map((x) => ({
+    ...x,
+    dates: [...x.dates].sort((a, b) => a.localeCompare(b)),
+  }));
 
   programmingSelectionStore.setSelection(selectionPayload);
 
@@ -1163,7 +1253,10 @@ async function logProgrammingSelection() {
         try {
           return encodeURIComponent(JSON.stringify(autoPayload));
         } catch (error) {
-          console.warn('No fue posible serializar el payload automático.', error);
+          console.warn(
+            'No fue posible serializar el payload automático.',
+            error
+          );
           return null;
         }
       })()
@@ -1172,7 +1265,7 @@ async function logProgrammingSelection() {
   try {
     if (autoPayload) {
       await router.push({
-        name: 'newSchedule',
+        name: 'testNewSchedule',
         state: {
           autoFrom: 'consult30',
           payload: autoPayload,
@@ -1523,7 +1616,12 @@ function computeMonthsYears(fstartStr, fendStr) {
 function generateDailyEvents(startDate, endDate) {
   const events = [];
   const start = new Date(startDate.replace(/\//g, '-'));
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() + 1);
+
   const end = new Date(endDate.replace(/\//g, '-'));
+  end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + 1);
 
   // recorre cada día dentro del rango
   for (
@@ -1736,7 +1834,7 @@ function shiftClassByTime(time) {
 }
 
 /* Marco: limita ancho total y centra */
-.calendar-frame{
+.calendar-frame {
   width: 100%;
   max-width: 1200px;
   margin-inline: auto;
@@ -1744,7 +1842,7 @@ function shiftClassByTime(time) {
 }
 
 /* Scroller horizontal real */
-.calendar-scroll{
+.calendar-scroll {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1753,21 +1851,23 @@ function shiftClassByTime(time) {
 }
 
 /* Calendario base */
-.calender{
+.calender {
   width: 100%;
   height: var(--cal-height);
   margin-inline: auto;
 }
 
 /* La tabla de días necesita “más ancho” para que haya algo que scrollear */
-.calender .fc-scrollgrid{
+.calender .fc-scrollgrid {
   min-width: var(--cal-min-width);
 }
 
 /* Header pegajoso dentro del scroller horizontal */
-.calender .fc-toolbar-chunk{ min-width: 0; }
+.calender .fc-toolbar-chunk {
+  min-width: 0;
+}
 
-.calender .fc-header-toolbar{
+.calender .fc-header-toolbar {
   position: sticky;
   left: 0;
   z-index: 5;
@@ -1776,7 +1876,7 @@ function shiftClassByTime(time) {
 }
 
 /* Título largo → elipsis */
-.calender .fc-toolbar-title{
+.calender .fc-toolbar-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1784,15 +1884,19 @@ function shiftClassByTime(time) {
 }
 
 /* Opcional: hace más estable el ancho de columnas */
-.calender .fc-theme-standard .fc-daygrid-body table{
+.calender .fc-theme-standard .fc-daygrid-body table {
   table-layout: fixed;
 }
 
 /* Tus bordes del calendario */
 .fc-theme-standard td,
-.fc-theme-standard th { border-color: rgb(65, 64, 64); }
+.fc-theme-standard th {
+  border-color: rgb(65, 64, 64);
+}
 
-.fc .fc-scrollgrid-liquid { border-color: rgb(65, 64, 64); }
+.fc .fc-scrollgrid-liquid {
+  border-color: rgb(65, 64, 64);
+}
 
 /* --- EVENTOS (vista área) --- */
 .area-event {
@@ -1812,7 +1916,9 @@ function shiftClassByTime(time) {
   justify-content: center;
 }
 
-.area-event__menu { display: inline-flex; }
+.area-event__menu {
+  display: inline-flex;
+}
 
 .area-event__dot {
   width: 16px;
@@ -1824,7 +1930,9 @@ function shiftClassByTime(time) {
   cursor: pointer;
 }
 
-.fc-daygrid-day { overflow: hidden; }
+.fc-daygrid-day {
+  overflow: hidden;
+}
 
 /* --- LEYENDA DE TURNOS --- */
 .time-legend {
@@ -1834,12 +1942,30 @@ function shiftClassByTime(time) {
   flex-wrap: wrap;
   justify-content: center;
 }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 15px; font-weight: 600; }
-.legend-color { width: 12px; height: 12px; border-radius: 2px; }
-.legend-item.morning .legend-color { background-color: #ffd926; }
-.legend-item.afternoon .legend-color { background-color: #35f527; }
-.legend-item.night .legend-color { background-color: #00008b; }
-.legend-item.mixta .legend-color { background-color: #ff829b; }
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.legend-item.morning .legend-color {
+  background-color: #ffd926;
+}
+.legend-item.afternoon .legend-color {
+  background-color: #35f527;
+}
+.legend-item.night .legend-color {
+  background-color: #00008b;
+}
+.legend-item.mixta .legend-color {
+  background-color: #ff829b;
+}
 
 /* Texto flotante de horas del mes */
 .hoursmonth {
@@ -1868,7 +1994,9 @@ function shiftClassByTime(time) {
   margin-bottom: 8px;
 }
 
-.legend-search { width: min(420px, 100%); }
+.legend-search {
+  width: min(420px, 100%);
+}
 
 .legend-grid {
   display: grid;
@@ -1889,11 +2017,18 @@ function shiftClassByTime(time) {
   border-radius: 999px;
   background: #fafafa;
   min-width: 0;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
 }
-.legend-chip:hover { background: #f3f3f3; }
-.legend-chip.is-compact { padding: 6px 10px; }
-.legend-chip__radio { position: absolute; opacity: 0; pointer-events: none; }
+.legend-chip:hover {
+  background: #f3f3f3;
+}
+
+.legend-chip__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
 .legend-chip__swatch {
   width: 18px;
   height: 18px;
@@ -1901,13 +2036,30 @@ function shiftClassByTime(time) {
   flex: 0 0 auto;
   background: var(--chip-color);
   border: 2px solid var(--chip-color);
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
-.legend-chip__name { font-size: 0.875rem; font-weight: 500; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.legend-chip__count { margin-left: auto; font-size: 0.75rem; padding: 2px 6px; border-radius: 999px; background: #eee; color: #333; }
+.legend-chip__name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.legend-chip__count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eee;
+  color: #333;
+}
 
 /* Modo programación: feedback visual */
-.is-programming .legend-chip:not(.is-selected) .legend-chip__swatch { background: transparent; }
+.is-programming .legend-chip:not(.is-selected) .legend-chip__swatch {
+  background: transparent;
+}
 .is-programming .legend-chip.is-selected .legend-chip__swatch {
   background: var(--chip-color);
   border-color: var(--chip-color);
@@ -1928,7 +2080,10 @@ function shiftClassByTime(time) {
 }
 
 /* Popper y tooltips */
-.v-popper__popper { max-width: min(92vw, 460px); contain: layout paint; }
+.v-popper__popper {
+  max-width: min(92vw, 460px);
+  contain: layout paint;
+}
 .content-tooltip-event,
 .content-tooltip-event1 {
   max-width: min(92vw, 460px);
@@ -1940,10 +2095,33 @@ function shiftClassByTime(time) {
 }
 
 /* Scrollbar un poco más decente */
-.calendar-scroll::-webkit-scrollbar { height: 10px; }
-.calendar-scroll::-webkit-scrollbar-track { background: #f0f0f0; }
-.calendar-scroll::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 6px; }
-.calendar-scroll:hover::-webkit-scrollbar-thumb { background: #a8a8a8; }
+.calendar-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+.calendar-scroll::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+.calendar-scroll::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 6px;
+}
+.calendar-scroll:hover::-webkit-scrollbar-thumb {
+  background: #a8a8a8;
+}
+
+/* Sombreado de días seleccionados en modo Programar (área) */
+.calender .fc-daygrid-day.is-picked .fc-daygrid-day-frame {
+  /* Fallback por si el navegador no entiende color-mix */
+  background-color: rgba(58, 134, 255, 0.18);
+  /* Preferido: usa el color del instructor vía CSS var */
+  background: color-mix(in srgb, var(--picked-color, #3a86ff) 22%, transparent);
+}
+
+.calender .fc-daygrid-day.is-picked {
+  /* Borde interior para que se note sin romper el layout */
+  box-shadow: inset 0 0 0 2px
+    color-mix(in srgb, var(--picked-color, #3a86ff) 55%, transparent);
+}
 
 /* Responsive */
 @media (max-width: 600px) {
@@ -1951,13 +2129,17 @@ function shiftClassByTime(time) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: center;
   }
-  .actions-bar .q-btn { width: 100%; }
+  .actions-bar .q-btn {
+    width: 100%;
+  }
   .legend-grid {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     max-height: 40vh;
   }
 }
 @media (max-width: 420px) {
-  .actions-bar { grid-template-columns: 1fr; }
+  .actions-bar {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
