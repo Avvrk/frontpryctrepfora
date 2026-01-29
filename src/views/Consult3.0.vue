@@ -5,8 +5,8 @@
         role !== 'USER'
           ? '/reports'
           : opcion == 'instructor'
-          ? '/home/instructor'
-          : '/consultor'
+            ? '/home/instructor'
+            : '/consultor'
       "
     />
 
@@ -181,24 +181,37 @@
     <div class="row justify-center" v-if="existInfo">
       <div class="col-11">
         <div class="actions-bar">
+          <!-- Programar (área o por instructor) -->
           <q-btn
-            v-if="shape === 'area' && existInfo"
-            label="Programar"
-            color="primary"
-            class="bg-green-7 text-white"
+            v-if="
+              existInfo &&
+              (shape === 'area' ||
+                (shape === 'instructor' && opcion === 'instructor'))
+            "
+            :label="selectBtnLabel"
+            :icon="selectBtnIcon"
+            :color="selectBtnColor"
             :outline="!programmingMode"
             :unelevated="programmingMode"
-            :disable="legendInstructors.length === 0"
+            :disable="shape === 'area' ? legendInstructors.length === 0 : !inst"
+            :class="['btn-select', { 'text-white': programmingMode }]"
             @click="toggleProgrammingMode"
           />
+
           <q-btn
-            v-if="shape === 'area' && existInfo"
-            label="Ver selección"
-            color="secondary"
-            class="bg-green-7 text-white"
-            :disable="!programmingSelections.length"
+            v-if="
+              existInfo &&
+              (shape === 'area' ||
+                (shape === 'instructor' && opcion === 'instructor'))
+            "
+            :label="goBtnLabel"
+            icon="edit_calendar"
+            color="primary"
+            class="text-white"
+            :disable="!hasSelectedDates"
             @click="logProgrammingSelection"
           />
+
           <q-btn
             v-if="shape === 'instructor' && existInfo"
             label="Generar PDF"
@@ -220,6 +233,27 @@
             @click="cancel()"
           />
         </div>
+        <div
+  v-if="
+    existInfo &&
+    programmingMode &&
+    (shape === 'area' || (shape === 'instructor' && opcion === 'instructor'))
+  "
+  class="row justify-center q-mt-sm"
+>
+  <div class="col-11">
+    <div class="program-hint">
+      <q-icon name="info" size="18px" />
+      <span v-if="shape === 'instructor'">
+        Selecciona los días en el calendario para poder programar.
+      </span>
+      <span v-else>
+        Selecciona primero un <b>instructor</b> en la lista y luego los <b>días</b>
+        en el calendario para poder programar.
+      </span>
+    </div>
+  </div>
+</div>
       </div>
     </div>
 
@@ -257,6 +291,13 @@
         :class="{ 'is-programming': programmingMode }"
         v-if="shape === 'area' && existInfo"
       >
+        <small
+          v-if="shape === 'area' && existInfo && programmingMode"
+          class="text-grey-8 q-ml-sm text-subtitle1"
+        >
+          Modo selección activo: elige un instructor y luego los días en el
+          calendario.
+        </small>
         <div class="legend-toolbar">
           <q-input
             v-model="legendQuery"
@@ -306,10 +347,9 @@
         </div>
       </div>
       <div
-        class="time-legend q-ml-xl q-pt-xl column"
-        style="position: fixed; left: 0; bottom: 10%"
-        v-if="opcion == 'instructor' && existInfo"
-      >
+  v-if="existInfo && showCalender"
+  class="time-legend time-legend--top q-mt-lg"
+>
         <!-- Mañana -->
         <div class="legend-item morning">
           <span class="legend-color" aria-label="Mañana"></span>
@@ -339,13 +379,11 @@
 
         <!-- MIXTA -->
         <div class="legend-item mixta" v-if="shape != 'area'">
-          <span class="legend-color" aria-label="Noche"></span>
+          <span class="legend-color" aria-label="Mixta"></span>
           <span class="legend-text">Mixta</span>
-          <!--           <q-tooltip anchor="top left" self="center left" :offset="[25, 20]">
-            {{ shiftRanges.mixta }}
-          </q-tooltip> -->
         </div>
       </div>
+
       <div id="calenderHour" v-for="(c, i) in calendarOptions" :key="i">
         <div
           class="row justify-center hoursmonth"
@@ -404,7 +442,7 @@
                                 {{
                                   getAreaTooltipText(
                                     slot.instructor,
-                                    'Sin instructor'
+                                    'Sin instructor',
                                   )
                                 }}
                               </p>
@@ -419,7 +457,7 @@
                                 {{
                                   getAreaTooltipText(
                                     slot.environment,
-                                    'Sin ambiente'
+                                    'Sin ambiente',
                                   )
                                 }}
                               </p>
@@ -595,6 +633,31 @@ const COLOR_PALETTE = [
   '#480CA8',
 ];
 
+const hasSelectedDates = computed(() =>
+  (programmingSelections.value || []).some(
+    (s) => Array.isArray(s.dates) && s.dates.length > 0,
+  ),
+);
+
+const selectBtnLabel = computed(() => {
+  if (programmingMode.value) return 'Cancelar selección';
+  return shape.value === 'area'
+    ? 'Seleccionar días'
+    : 'Seleccionar días a programar';
+});
+
+const selectBtnIcon = computed(() =>
+  programmingMode.value ? 'close' : 'event_available',
+);
+
+const selectBtnColor = computed(() =>
+  programmingMode.value ? 'negative' : 'positive',
+);
+
+const goBtnLabel = computed(() =>
+  shape.value === 'area' ? 'Ir a programación' : 'Programar horarios',
+);
+
 let availableColors = [...COLOR_PALETTE];
 
 const resetAvailableColors = () => {
@@ -678,12 +741,12 @@ onBeforeUnmount(() => {
 watch(
   () => programmingSelections.value,
   () => {
-    if (shape.value === 'area' && existInfo.value && yearsMonth.value?.length) {
+    if (existInfo.value && yearsMonth.value?.length) {
       generateCalendar();
       forceCloseTooltips();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 const selectedInstructorColor = computed(() => {
@@ -696,7 +759,7 @@ const selectedInstructorColor = computed(() => {
 const selectedDatesSet = computed(() => {
   if (!programmingMode.value || !selectedInstructorId.value) return new Set();
   const entry = programmingSelections.value?.find(
-    (x) => x.instructorId === selectedInstructorId.value
+    (x) => x.instructorId === selectedInstructorId.value,
   );
   return new Set(entry?.dates || []);
 });
@@ -843,8 +906,8 @@ const areaDailySlots = computed(() => {
       const entries = Array.isArray(monthEvents)
         ? monthEvents
         : monthEvents
-        ? [monthEvents]
-        : [];
+          ? [monthEvents]
+          : [];
 
       entries.forEach((event) => {
         const dayKey = normalizeDateKey(event?.start);
@@ -919,23 +982,26 @@ watch(
   () => {
     resetReportData();
   },
-  { flush: 'post' }
+  { flush: 'post' },
 );
 
 watch(
   () => legendInstructors.value,
   (list) => {
+    // Solo nos importa en "Por Área"
+    if (shape.value !== 'area') return;
+
     if (
       selectedInstructorId.value &&
       (!Array.isArray(list) ||
         !list.some(
-          (instructor) => instructor.id === selectedInstructorId.value
+          (instructor) => instructor.id === selectedInstructorId.value,
         ))
     ) {
       selectedInstructorId.value = null;
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 watch(
@@ -944,12 +1010,12 @@ watch(
     const hasMonths =
       Array.isArray(yearsMonth.value) && yearsMonth.value.length > 0;
 
-    if (shape.value === 'area' && existInfo.value && hasMonths) {
+    if (existInfo.value && hasMonths && programmingMode.value) {
       generateCalendar();
       forceCloseTooltips();
     }
   },
-  { flush: 'post' }
+  { flush: 'post' },
 );
 
 const router = useRouter();
@@ -968,8 +1034,8 @@ onBeforeMount(async () => {
     opcion.value == 'instructor'
       ? await getInst()
       : opcion.value == 'ficha'
-      ? await getFiches()
-      : await getEnvironments();
+        ? await getFiches()
+        : await getEnvironments();
     isLoadingData.value = false;
   }
 });
@@ -977,7 +1043,24 @@ onBeforeMount(async () => {
 function toggleProgrammingMode() {
   programmingMode.value = !programmingMode.value;
 
-  if (!programmingMode.value) {
+  if (programmingMode.value) {
+    // Modo "Por Instructor": usamos el instructor actual
+    if (shape.value === 'instructor' && inst.value?.value) {
+      selectedInstructorId.value = inst.value.value;
+
+      const exists = programmingSelections.value.find(
+        (x) => x.instructorId === inst.value.value,
+      );
+
+      if (!exists) {
+        programmingSelections.value.push({
+          instructorId: inst.value.value,
+          instructorName: nameInstructor.value || inst.value.label,
+          dates: [],
+        });
+      }
+    }
+  } else {
     selectedInstructorId.value = null;
     clearProgrammingSelection();
   }
@@ -1083,69 +1166,62 @@ function generateCalendar() {
       eventOrder: 'order',
       events,
       dayCellClassNames: (arg) => {
-        // Solo pintamos en modo área + programación + instructor elegido
-        if (
-          !(
-            shape.value === 'area' &&
-            programmingMode.value &&
-            selectedInstructorId.value
-          )
-        ) {
+        const isAreaActive =
+          shape.value === 'area' &&
+          programmingMode.value &&
+          !!selectedInstructorId.value;
+        const isInstrActive =
+          shape.value === 'instructor' && programmingMode.value;
+
+        if (!(isAreaActive || isInstrActive)) {
           return [];
         }
+
         const key = arg.date.toLocaleDateString('sv-SE'); // YYYY-MM-DD
         return selectedDatesSet.value.has(key) ? ['is-picked'] : [];
       },
       dayCellDidMount: (arg) => {
-        // Inyecta el color del instructor para esa celda (si aplica)
-        if (
-          shape.value === 'area' &&
-          programmingMode.value &&
-          selectedInstructorId.value
-        ) {
-          arg.el.style.setProperty(
-            '--picked-color',
-            selectedInstructorColor.value
-          );
-        }
+        if (!programmingMode.value) return;
+        arg.el.style.setProperty(
+          '--picked-color',
+          selectedInstructorColor.value,
+        );
       },
     };
 
-    if (shape.value === 'area') {
-      // 1) Selección solo cuando tiene sentido
-      calendarConfig.selectable =
-        programmingMode.value && !!selectedInstructorId.value;
+    const isAreaShape = shape.value === 'area';
+    const isInstrShape =
+      shape.value === 'instructor' && opcion.value === 'instructor';
 
-      // 2) Evita que el overlay/higlight haga de las suyas
+    if (isAreaShape || isInstrShape) {
+      const canSelect =
+        programmingMode.value &&
+        (isAreaShape ? !!selectedInstructorId.value : true);
+
+      calendarConfig.selectable = canSelect;
       calendarConfig.selectMirror = false;
       calendarConfig.unselectAuto = false;
-      calendarConfig.longPressDelay = 320; // móvil
-      calendarConfig.selectMinDistance = 6; // require arrastre real para rango
+      calendarConfig.longPressDelay = 320;
+      calendarConfig.selectMinDistance = 6;
 
-      // 3) Rango (arrastrar): sigue usando select SOLO si lo necesitas
-      calendarConfig.selectAllow = () =>
-        programmingMode.value && !!selectedInstructorId.value;
+      calendarConfig.selectAllow = () => canSelect;
 
       calendarConfig.select = (info) => {
-        if (programmingMode.value && selectedInstructorId.value) {
-          // si quieres soportar arrastre, déjalo
-          handleAreaDateSelect(info);
-        }
+        if (!canSelect) return;
+        handleAreaDateSelect(info);
       };
 
-      // 4) Click simple: togglear un solo día sin overlay
       calendarConfig.dateClick = (info) => {
-        if (!(programmingMode.value && selectedInstructorId.value)) return;
+        if (!canSelect) return;
 
         const start = new Date(
           info.date.getFullYear(),
           info.date.getMonth(),
-          info.date.getDate()
+          info.date.getDate(),
         );
         const end = new Date(start);
         end.setDate(end.getDate() + 1);
 
-        // micro pausa para dejar pintar antes de mutar estado reactivo
         requestAnimationFrame(() => {
           handleAreaDateSelect({ start, end });
         });
@@ -1159,46 +1235,55 @@ function generateCalendar() {
 }
 
 function handleAreaDateSelect(selectionInfo) {
-  if (!programmingMode.value || !selectedInstructorId.value) return;
+  if (!programmingMode.value) return;
 
-  const instructor = legendInstructors.value.find(
-    (i) => i.id === selectedInstructorId.value
-  );
-  if (!instructor) return;
+  let instructorId = null;
+  let instructorNameLocal = '';
+
+  if (shape.value === 'area') {
+    if (!selectedInstructorId.value) return;
+    const instructor = legendInstructors.value.find(
+      (i) => i.id === selectedInstructorId.value,
+    );
+    if (!instructor) return;
+    instructorId = instructor.id;
+    instructorNameLocal = instructor.name;
+  } else if (shape.value === 'instructor') {
+    if (!inst.value?.value) return;
+    instructorId = inst.value.value;
+    instructorNameLocal = nameInstructor.value || inst.value.label;
+  } else {
+    return;
+  }
 
   const { start, end } = selectionInfo; // FullCalendar: [start, end)
   if (!(start instanceof Date) || !(end instanceof Date)) return;
 
   const normalize = (d) =>
     new Date(d.getFullYear(), d.getMonth(), d.getDate()).toLocaleDateString(
-      'sv-SE'
+      'sv-SE',
     ); // YYYY-MM-DD
 
-  // busca o crea contenedor del instructor
   const list = [...programmingSelections.value];
-  let sel = list.find((x) => x.instructorId === instructor.id);
+  let sel = list.find((x) => x.instructorId === instructorId);
   if (!sel) {
     sel = {
-      instructorId: instructor.id,
-      instructorName: instructor.name,
+      instructorId,
+      instructorName: instructorNameLocal,
       dates: [],
     };
     list.push(sel);
   }
 
-  // recorre días [start, end)
   const cursor = new Date(start);
   while (cursor < end) {
     const key = normalize(cursor);
-    // toggle: si ya estaba, se quita; si no, se agrega
     const idx = sel.dates.indexOf(key);
     if (idx >= 0) sel.dates.splice(idx, 1);
     else sel.dates.push(key);
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // sel.dates.sort((a, b) => a.localeCompare(b));
-  // limpia instructores sin fechas
   programmingSelections.value = list.filter((x) => x.dates.length);
 }
 
@@ -1213,7 +1298,7 @@ async function logProgrammingSelection() {
   }
 
   const selectionPayload = JSON.parse(
-    JSON.stringify(programmingSelections.value)
+    JSON.stringify(programmingSelections.value),
   ).map((x) => ({
     ...x,
     dates: [...x.dates].sort((a, b) => a.localeCompare(b)),
@@ -1227,13 +1312,13 @@ async function logProgrammingSelection() {
     if (!Array.isArray(list) || !list.length) return null;
     if (list.length === 1) return list[0];
     const current = list.find(
-      (item) => item?.instructorId === selectedInstructorId.value
+      (item) => item?.instructorId === selectedInstructorId.value,
     );
     if (current && Array.isArray(current.dates) && current.dates.length) {
       return current;
     }
     return list.find(
-      (item) => Array.isArray(item?.dates) && item.dates.length > 0
+      (item) => Array.isArray(item?.dates) && item.dates.length > 0,
     );
   };
 
@@ -1255,7 +1340,7 @@ async function logProgrammingSelection() {
         } catch (error) {
           console.warn(
             'No fue posible serializar el payload automático.',
-            error
+            error,
           );
           return null;
         }
@@ -1338,7 +1423,7 @@ async function getReport() {
 
       const { months: mm, yearsMonth: yymm } = computeMonthsYears(
         fStart.value,
-        fEnd.value
+        fEnd.value,
       );
       months.value = mm;
       yearsMonth.value = yymm;
@@ -1351,7 +1436,7 @@ async function getReport() {
               fstart: fStart.value,
               fend: fEnd.value,
             },
-            false
+            false,
           );
           console.log(res);
 
@@ -1480,7 +1565,7 @@ function filterInstru(val, update, abort) {
     const needle = val.toLocaleLowerCase();
 
     filterInstructor.value = copyFilterInst.value.filter(
-      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
+      (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1,
     );
   });
 }
@@ -1501,7 +1586,7 @@ function handleThematicareaChange(selectedArea) {
   // se filtran solo los instructores cuyo campo "area" coincide
   copyFilterInst.value = optionsInst.value.filter(
     (i) =>
-      i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase()
+      i.area.trim().toLocaleLowerCase() === selectedArea.toLocaleLowerCase(),
   );
 
   // el arreglo resultante se usa para mostrar las opciones disponibles
@@ -1597,7 +1682,7 @@ function computeMonthsYears(fstartStr, fendStr) {
 
   // usamos UTC como en el back (getUTCMonth / getUTCFullYear) para evitar TZ
   let cursor = new Date(
-    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1)
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
   );
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
 
@@ -1667,7 +1752,7 @@ function generateDailyEvents(startDate, endDate) {
         borderColor: shape.value == 'area' ? '#00008B' : '#929292',
         order: 3,
         className: 'jornada-noche',
-      }
+      },
     );
   }
 
@@ -1678,7 +1763,7 @@ function generateDailyEvents(startDate, endDate) {
 function generateColor() {
   if (!availableColors.length) {
     console.warn(
-      '[Consult3.0] Se agotaron los colores disponibles en la paleta definida.'
+      '[Consult3.0] Se agotaron los colores disponibles en la paleta definida.',
     );
     return null;
   }
@@ -1707,7 +1792,7 @@ function generateMonthEvents(my) {
   // crea los tres turnos por día dentro del rango efectivo
   let events = generateDailyEvents(
     startRange.toISOString().split('T')[0],
-    endRange.toISOString().split('T')[0]
+    endRange.toISOString().split('T')[0],
   );
 
   const pendingMixtos = [];
@@ -1770,7 +1855,7 @@ function generateMonthEvents(my) {
     const dayKey = new Date(a.start).toLocaleDateString('sv-SE');
 
     const b = pendingMixtos.find(
-      (x) => x.start === dayKey && a.order === x.order
+      (x) => x.start === dayKey && a.order === x.order,
     );
 
     if (b) {
@@ -1831,6 +1916,18 @@ function shiftClassByTime(time) {
   /* Sube este mínimo si quieres forzar más scroll en pantallas pequeñas */
   --cal-min-width: 1100px;
   --cal-height: 760px;
+}
+
+.program-hint {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff8e1;
+  border: 1px solid rgba(0,0,0,.15);
+  color: #4e3b00;
+  font-weight: 600;
 }
 
 /* Marco: limita ancho total y centra */
@@ -1968,10 +2065,12 @@ function shiftClassByTime(time) {
 }
 
 /* Texto flotante de horas del mes */
-.hoursmonth {
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, 300%);
+.hoursmonth > div {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 /* --- LEYENDA DE INSTRUCTORES --- */
@@ -2017,7 +2116,9 @@ function shiftClassByTime(time) {
   border-radius: 999px;
   background: #fafafa;
   min-width: 0;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
     background-color 0.15s ease;
 }
 .legend-chip:hover {
@@ -2036,7 +2137,9 @@ function shiftClassByTime(time) {
   flex: 0 0 auto;
   background: var(--chip-color);
   border: 2px solid var(--chip-color);
-  transition: background-color 0.15s ease, border-color 0.15s ease,
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
     box-shadow 0.15s ease;
 }
 .legend-chip__name {
@@ -2121,6 +2224,15 @@ function shiftClassByTime(time) {
   /* Borde interior para que se note sin romper el layout */
   box-shadow: inset 0 0 0 2px
     color-mix(in srgb, var(--picked-color, #3a86ff) 55%, transparent);
+}
+
+.btn-select.q-btn--outline {
+  border-width: 1px;
+}
+
+.btn-select--active.q-btn--outline {
+  border-color: #e53935 !important; /* rojo */
+  border-width: 2px;
 }
 
 /* Responsive */
