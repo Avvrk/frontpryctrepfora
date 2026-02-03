@@ -13,9 +13,11 @@
     <HeaderLayout title="Reportes" />
     <q-form @submit.prevent.stop="getReport()" novalidate v-if="!existInfo">
       <div class="row justify-center column q-mx-xl">
-        <div class="q-gutter-sm">
-          <q-radio v-model="shape" val="instructor" label="Por Instructor" />
-          <q-radio v-model="shape" val="area" label="Por Area" />
+        <div class="col-11 q-px-md q-mb-sm">
+          <div class="row items-center justify-start q-gutter-md">
+            <q-radio v-model="shape" val="instructor" label="Por Instructor" />
+            <q-radio v-model="shape" val="area" label="Por Área" />
+          </div>
         </div>
         <div class="col-11 col-sm-6 q-px-md">
           <q-select
@@ -234,26 +236,28 @@
           />
         </div>
         <div
-  v-if="
-    existInfo &&
-    programmingMode &&
-    (shape === 'area' || (shape === 'instructor' && opcion === 'instructor'))
-  "
-  class="row justify-center q-mt-sm"
->
-  <div class="col-11">
-    <div class="program-hint">
-      <q-icon name="info" size="18px" />
-      <span v-if="shape === 'instructor'">
-        Selecciona los días en el calendario para poder programar.
-      </span>
-      <span v-else>
-        Selecciona primero un <b>instructor</b> en la lista y luego los <b>días</b>
-        en el calendario para poder programar.
-      </span>
-    </div>
-  </div>
-</div>
+          v-if="
+            existInfo &&
+            programmingMode &&
+            (shape === 'area' ||
+              (shape === 'instructor' && opcion === 'instructor'))
+          "
+          class="row justify-center q-mt-sm"
+        >
+          <div class="col-11">
+            <div class="program-hint">
+              <q-icon name="info" size="18px" />
+              <span v-if="shape === 'instructor'">
+                Selecciona los días en el calendario para poder programar.
+              </span>
+              <span v-else>
+                Selecciona primero un <b>instructor</b> en la lista y luego los
+                <b>días</b>
+                en el calendario para poder programar.
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -347,9 +351,9 @@
         </div>
       </div>
       <div
-  v-if="existInfo && showCalender"
-  class="time-legend time-legend--top q-mt-lg"
->
+        v-if="existInfo && showCalender"
+        class="time-legend time-legend--top q-mt-lg"
+      >
         <!-- Mañana -->
         <div class="legend-item morning">
           <span class="legend-color" aria-label="Mañana"></span>
@@ -397,6 +401,9 @@
         <div class="row justify-center flex" v-if="existInfo && showCalender">
           <div class="col-12 col-xl-10 q-pb-lg q-mt-md justify-center flex">
             <div class="calendar-frame">
+              <div class="calendar-title">
+                {{ formatMonthTitle(yearsMonth[i]) }}
+              </div>
               <div class="calendar-scroll">
                 <FullCalendar class="calender text-uppercase" :options="c">
                   <template v-if="shape === 'area'" v-slot:eventContent="arg">
@@ -1158,11 +1165,7 @@ function generateCalendar() {
       selectable: true,
       initialDate: formatDate,
       fixedWeekCount: false,
-      headerToolbar: {
-        left: '',
-        center: 'title',
-        right: '',
-      },
+      headerToolbar: false,
       eventOrder: 'order',
       events,
       dayCellClassNames: (arg) => {
@@ -1233,6 +1236,20 @@ function generateCalendar() {
 
   existInfo.value = true;
 }
+
+const formatMonthTitle = (my) => {
+  if (!my) return '';
+  const [y, m] = String(my).split('-');
+  const d = new Date(Number(y), Number(m) - 1, 1);
+
+  // "febrero de 2026" (o lo que toque), y lo pones como quieras
+  return new Intl.DateTimeFormat('es-CO', {
+    month: 'long',
+    year: 'numeric',
+  })
+    .format(d)
+    .toUpperCase();
+};
 
 function handleAreaDateSelect(selectionInfo) {
   if (!programmingMode.value) return;
@@ -1456,25 +1473,52 @@ async function getReport() {
       generateCalendar();
       forceCloseTooltips();
     } else {
-      let data = {
-        instructor: inst.value.value,
-        fstart: fStart.value,
-        fend: fEnd.value,
-      };
+      // 1) SIEMPRE arma el rango de meses con las fechas del formulario
+      const { months: mm, yearsMonth: yymm } = computeMonthsYears(
+        fStart.value,
+        fEnd.value,
+      );
+      months.value = mm;
+      yearsMonth.value = yymm;
 
-      const res = await useStoreReport.generateReportByInstr(data);
-      console.log(res);
-      if (res.status <= 201) {
-        months.value = res.data.months;
-        yearsMonth.value = res.data.yearsMonth;
-        eventsCalender.value = res.data.events;
-        nameInstructor.value = res.data.instructor;
-        hoursWork1.value = res.data.hoursworkFormacion;
-        hoursWork2.value = res.data.hoursworkOthers;
-        calculateMonthHours();
-        generateCalendar();
-        forceCloseTooltips();
+      // 2) Defaults (por si no hay eventos)
+      eventsCalender.value = {};
+      nameInstructor.value = (inst.value?.label || '').toString();
+      hoursWork1.value = 0;
+      hoursWork2.value = 0;
+
+      // 3) Intenta traer eventos, pero si no hay, NO bloquees el flujo
+      try {
+        const data = {
+          instructor: inst.value.value,
+          fstart: fStart.value,
+          fend: fEnd.value,
+        };
+
+        const res = await useStoreReport.generateReportByInstr(data, false);
+
+        // Si vino bien, rellena lo que haya. Si viene vacío, igual sigue.
+        if (res && res.status <= 299) {
+          eventsCalender.value = res.data?.events || {};
+          nameInstructor.value = res.data?.instructor || nameInstructor.value;
+          hoursWork1.value = res.data?.hoursworkFormacion ?? 0;
+          hoursWork2.value = res.data?.hoursworkOthers ?? 0;
+        }
+      } catch (e) {
+        // Axios suele mandar e.response.status cuando no es 2xx
+        const st = e?.response?.status;
+
+        // 204/404 = "sin eventos" -> SILENCIO TOTAL
+        if (st === 204 || st === 404) return;
+
+        // Para cualquier otra cosa: log en consola, pero sin notificación (si eso quieres)
+        console.warn('Error consultando reporte instructor:', e);
       }
+
+      // 4) Renderiza siempre el calendario para poder seleccionar días
+      calculateMonthHours();
+      generateCalendar();
+      forceCloseTooltips();
     }
   } catch (error) {
     console.error(error);
@@ -1925,7 +1969,7 @@ function shiftClassByTime(time) {
   padding: 10px 12px;
   border-radius: 10px;
   background: #fff8e1;
-  border: 1px solid rgba(0,0,0,.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   color: #4e3b00;
   font-weight: 600;
 }
@@ -1964,20 +2008,17 @@ function shiftClassByTime(time) {
   min-width: 0;
 }
 
-.calender .fc-header-toolbar {
-  position: sticky;
-  left: 0;
-  z-index: 5;
+.calendar-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 10px 8px;
   background: #fff;
-  padding-right: 8px;
-}
-
-/* Título largo → elipsis */
-.calender .fc-toolbar-title {
+  border-radius: 10px;
+  margin-bottom: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 /* Opcional: hace más estable el ancho de columnas */
